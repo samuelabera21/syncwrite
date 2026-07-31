@@ -1,0 +1,263 @@
+openapi: 3.0.3
+info:
+  title: SyncWrite API Specification
+  version: 1.0.0
+  description: API documentation for the SyncWrite Real-Time Collaborative Document Editor backend.
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  # ==================== DOCUMENT MANAGEMENT & DASHBOARD ====================
+  /api/documents:
+    get:
+      summary: Get user documents (Dashboard)
+      description: Returns documents owned by or shared with the authenticated user[cite: 1].
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [owned, shared, recent]
+      responses:
+        '200':
+          description: List of documents retrieved successfully[cite: 1].
+        '401':
+          description: Unauthorized access.
+
+    post:
+      summary: Create a new document[cite: 1]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  default: "Untitled Document"[cite: 1]
+      responses:
+        '201':
+          description: Document created successfully[cite: 1].
+        '401':
+          description: Unauthorized.
+
+  /api/documents/{id}:
+    get:
+      summary: Open an existing document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document metadata and content retrieved[cite: 1].
+        '403':
+          description: Forbidden (insufficient permissions)[cite: 1].
+        '404':
+          description: Document not found.
+
+    patch:
+      summary: Rename or update document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string[cite: 1]
+      responses:
+        '200':
+          description: Document updated successfully[cite: 1].
+        '403':
+          description: Forbidden (requires Editor role)[cite: 1].
+
+    delete:
+      summary: Delete a document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Document deleted successfully[cite: 1].
+        '403':
+          description: Forbidden (only owner can delete).
+
+  /api/documents/{id}/duplicate:
+    post:
+      summary: Duplicate an existing document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Document duplicated successfully[cite: 1].
+
+  # ==================== SHARING & PERMISSIONS ====================
+  /api/documents/{id}/shares:
+    get:
+      summary: Get document shares and permissions[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of shared users and roles[cite: 1].
+    post:
+      summary: Share document with a user[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, role]
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [VIEWER, COMMENTER, EDITOR][cite: 1]
+      responses:
+        '201':
+          description: Document shared successfully[cite: 1].
+
+  # ==================== COMMENTS ====================
+  /api/documents/{id}/comments:
+    get:
+      summary: Get all comments for a document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Comments and threads retrieved[cite: 1].
+    post:
+      summary: Add a comment or reply[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string[cite: 1]
+                parentId:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Comment created[cite: 1].
+
+  /api/documents/{id}/comments/{commentId}:
+    patch:
+      summary: Resolve or update a comment[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                isResolved:
+                  type: boolean[cite: 1]
+      responses:
+        '200':
+          description: Comment updated[cite: 1].
+    delete:
+      summary: Delete a comment[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Comment deleted[cite: 1].
+
+  # ==================== VERSION HISTORY ====================
+  /api/documents/{id}/revisions:
+    get:
+      summary: View document revision history[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of revisions with timestamps and creators[cite: 1].
+
+  /api/documents/{id}/revisions/{revisionId}/restore:
+    post:
+      summary: Restore an earlier version of the document[cite: 1]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document restored to revision state[cite: 1].
