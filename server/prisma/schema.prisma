@@ -1,0 +1,135 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            String       @id @default(uuid())
+  name          String
+  email         String       @unique
+  emailVerified Boolean      @default(false)
+  image         String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  // Relations
+  ownedDocuments Document[]         @relation("DocumentOwner")
+  sharedAccess   DocumentShare[]
+  comments       Comment[]
+  revisions      DocumentRevision[]
+  sessions       Session[]
+  accounts       Account[]
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id           String    @id @default(uuid())
+  accountId    String
+  providerId   String
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String?
+  refreshToken String?
+  idToken      String?
+  expiresAt    DateTime?
+  password     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+model Document {
+  id           String          @id @default(uuid())
+  title        String          @default("Untitled Document")
+  content      Bytes?          // Stores binary CRDT/Yjs state or rich text backup
+  ownerId      String
+  owner        User            @relation("DocumentOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime        @default(now())
+  lastModified DateTime        @updatedAt
+
+  // Relations
+  shares       DocumentShare[]
+  revisions    DocumentRevision[]
+  comments     Comment[]
+
+  @@map("documents")
+}
+
+enum PermissionRole {
+  VIEWER
+  COMMENTER
+  EDITOR
+}
+
+model DocumentShare {
+  id         String         @id @default(uuid())
+  documentId String
+  document   Document       @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       PermissionRole @default(VIEWER)
+  createdAt  DateTime       @default(now())
+
+  @@unique([documentId, userId])
+  @@map("document_shares")
+}
+
+model DocumentRevision {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  content    Bytes    // Snapshot of document at this revision
+  versionNum Int
+  createdBy  String
+  creator    User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("document_revisions")
+}
+
+model Comment {
+  id         String    @id @default(uuid())
+  documentId String
+  document   Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content    String
+  parentId   String?   // For threading/replies
+  parent     Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentReplies")
+  isResolved Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("comments")
+}
