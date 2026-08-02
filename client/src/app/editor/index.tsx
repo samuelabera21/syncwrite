@@ -11,7 +11,7 @@ import { api } from "../../lib/api";
 import { useSession } from "../../lib/auth-client";
 import {
     ArrowLeft, Share2, MessageSquare, History, Cloud, CloudCheck,
-    RotateCcw, Trash2, Shield, UserPlus, Lock, AlertCircle, Loader2, CheckCircle2
+    RotateCcw, Trash2, Shield, UserPlus, Lock, AlertCircle, Loader2, CheckCircle2, Eye
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -48,6 +48,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
 
     // Revisions state
     const [revisions, setRevisions] = useState<any[]>([]);
+    const [previewRevision, setPreviewRevision] = useState<any | null>(null);
 
     // Sharing state
     const [shares, setShares] = useState<any[]>([]);
@@ -693,17 +694,26 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                                             <div key={r.id} className="rounded-lg border border-slate-200 p-3 space-y-2 bg-white">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-xs font-medium text-slate-700">
-                                                        {new Date(r.createdAt).toLocaleDateString()} {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        Version {r.versionNum} &bull; {new Date(r.createdAt).toLocaleDateString()} {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                    {isEditable && (
+                                                    <div className="flex items-center space-x-3">
                                                         <button
-                                                            onClick={() => handleRestoreRevision(r.id)}
-                                                            className="text-indigo-600 hover:text-indigo-800 text-xs font-semibold flex items-center space-x-1"
+                                                            onClick={() => setPreviewRevision(r)}
+                                                            className="text-slate-500 hover:text-indigo-600 text-[11px] font-semibold flex items-center space-x-1 transition-colors"
                                                         >
-                                                            <RotateCcw className="h-3 w-3" />
-                                                            <span>Restore</span>
+                                                            <Eye className="h-3 w-3" />
+                                                            <span>Preview</span>
                                                         </button>
-                                                    )}
+                                                        {isEditable && (
+                                                            <button
+                                                                onClick={() => handleRestoreRevision(r.id)}
+                                                                className="text-indigo-600 hover:text-indigo-800 text-[11px] font-semibold flex items-center space-x-1 transition-colors"
+                                                            >
+                                                                <RotateCcw className="h-3 w-3" />
+                                                                <span>Restore</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <p className="text-[11px] text-slate-400">Created by {r.creator?.name || "Unknown"}</p>
                                             </div>
@@ -829,6 +839,123 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                         </div>
                     </aside>
                 )}
+            </div>
+
+            {/* Revision Preview Modal */}
+            {previewRevision && (
+                <RevisionPreviewModal
+                    revision={previewRevision}
+                    onClose={() => setPreviewRevision(null)}
+                    onRestore={handleRestoreRevision}
+                />
+            )}
+        </div>
+    );
+}
+
+function PreviewEditor({ ydoc }: { ydoc: Y.Doc }) {
+    const editor = useEditor({
+        editable: false,
+        extensions: [
+            StarterKit.configure({ undoRedo: false }),
+            TextAlign.configure({ types: ["heading", "paragraph"] }),
+            Collaboration.configure({ document: ydoc }),
+        ],
+        editorProps: {
+            attributes: {
+                class: "prose prose-slate prose-sm max-w-none focus:outline-none px-6 py-8",
+            },
+        },
+    }, [ydoc]);
+
+    return <EditorContent editor={editor} />;
+}
+
+function RevisionPreviewModal({ revision, onClose, onRestore }: { revision: any, onClose: () => void, onRestore: (id: string) => void }) {
+    const [previewYDoc, setPreviewYDoc] = useState<Y.Doc | null>(null);
+
+    useEffect(() => {
+        if (!revision) return;
+        
+        if (!revision.content) {
+            toast.error("No content found in this revision snapshot.");
+            setPreviewYDoc(new Y.Doc());
+            return;
+        }
+
+        let updateBytes: Uint8Array;
+        try {
+            if (revision.content.type === "Buffer" && Array.isArray(revision.content.data)) {
+                updateBytes = new Uint8Array(revision.content.data);
+            } else if (revision.content.type === "Buffer" && typeof revision.content.data === "string") {
+                const binaryString = atob(revision.content.data);
+                updateBytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    updateBytes[i] = binaryString.charCodeAt(i);
+                }
+            } else if (typeof revision.content === "string") {
+                const b64 = revision.content.startsWith("data:") ? revision.content.split(",")[1] : revision.content;
+                const binaryString = atob(b64);
+                updateBytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    updateBytes[i] = binaryString.charCodeAt(i);
+                }
+            } else if (Array.isArray(revision.content)) {
+                updateBytes = new Uint8Array(revision.content);
+            } else if (typeof revision.content === "object" && Array.isArray(revision.content.data)) {
+                updateBytes = new Uint8Array(revision.content.data);
+            } else if (typeof revision.content === "object" && Object.keys(revision.content).length > 0 && !isNaN(Number(Object.keys(revision.content)[0]))) {
+                // Handle object with numeric keys: { "0": 1, "1": 2, ... }
+                const values = Object.values(revision.content) as number[];
+                updateBytes = new Uint8Array(values);
+            } else {
+                let formatStr = typeof revision.content;
+                if (formatStr === 'object') {
+                    formatStr = JSON.stringify(revision.content).substring(0, 60);
+                }
+                console.error("Unrecognized revision.content format:", formatStr, revision.content);
+                toast.error(`Unrecognized format: ${formatStr}`);
+                setPreviewYDoc(new Y.Doc());
+                return;
+            }
+
+            const ydoc = new Y.Doc();
+            Y.applyUpdate(ydoc, updateBytes);
+            setPreviewYDoc(ydoc);
+        } catch (e) {
+            console.error("Failed to apply revision update", e);
+            toast.error("Failed to decode document snapshot.");
+            setPreviewYDoc(new Y.Doc());
+        }
+    }, [revision]);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 text-lg">Preview Revision: Version {revision.versionNum}</h3>
+                        <p className="text-xs text-slate-500 mt-1">
+                            {new Date(revision.createdAt).toLocaleString()} by {revision.creator?.name || "Unknown"}
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Button variant="outline" onClick={onClose} size="sm">Cancel</Button>
+                        <Button onClick={() => { onRestore(revision.id); onClose(); }} size="sm">
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Restore This Version
+                        </Button>
+                    </div>
+                </div>
+                <div className="flex-1 overflow-y-auto bg-white min-h-[400px]">
+                    {previewYDoc ? (
+                        <PreviewEditor ydoc={previewYDoc} />
+                    ) : (
+                        <div className="flex items-center justify-center h-full">
+                            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

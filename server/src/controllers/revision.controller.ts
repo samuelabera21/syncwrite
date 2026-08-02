@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/db";
 import { getDocumentAndRole, hasMinimumRole } from "../middleware/permission.middleware";
-import { flushDoc, reloadDocFromDb } from "../websocket/collaboration";
+import { flushDoc, restoreDocState } from "../websocket/collaboration";
 
 // 1. View Document Revision History (Viewer+)
 export const getRevisions = async (req: Request, res: Response) => {
@@ -112,11 +112,15 @@ export const restoreRevision = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Revision not found on this document" });
         }
 
-        // Update document content with the revision's content snapshot
+        // 1. Generate new CRDT operations (deletions and insertions) that revert the 
+        // current document state back to the snapshot's text. This ensures clients accept the change.
+        const restoredStateBytes = await restoreDocState(documentId, revision.content);
+
+        // 2. Update document content with the newly appended CRDT state
         const updatedDocument = await prisma.document.update({
             where: { id: documentId },
             data: {
-                content: revision.content,
+                content: restoredStateBytes,
                 lastModified: new Date(),
             },
             include: {
@@ -124,9 +128,6 @@ export const restoreRevision = async (req: Request, res: Response) => {
                 shares: true,
             },
         });
-
-        // Broadcast restored content to any active WebSocket connections
-        await reloadDocFromDb(documentId);
 
         // Get latest version number to increment
         const latestRevision = await prisma.documentRevision.findFirst({
@@ -140,7 +141,7 @@ export const restoreRevision = async (req: Request, res: Response) => {
         await prisma.documentRevision.create({
             data: {
                 documentId,
-                content: revision.content,
+                content: restoredStateBytes,
                 versionNum: nextVersionNum,
                 createdBy: userId,
             },

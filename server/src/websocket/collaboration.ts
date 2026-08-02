@@ -159,22 +159,53 @@ export const flushDoc = async (documentId: string): Promise<void> => {
 };
 
 /**
- * Reload document state from PostgreSQL (e.g. after restoring a revision)
+ * Restore document state from a revision snapshot using CRDT transactions.
+ * This guarantees that all connected clients will accept the restored state,
+ * as it generates new deletion and insertion operations rather than rewinding time.
  */
-export const reloadDocFromDb = async (documentId: string): Promise<void> => {
-    const doc = docs.get(documentId);
-    if (!doc) return;
+export const restoreDocState = async (documentId: string, revisionContent: Buffer): Promise<Buffer> => {
+    let doc = docs.get(documentId);
+    let isDocActive = true;
+    
+    if (!doc) {
+        doc = await getOrLoadDoc(documentId);
+        isDocActive = false;
+    }
 
     try {
-        const dbDoc = await prisma.document.findUnique({
-            where: { id: documentId },
-        });
-        if (dbDoc && dbDoc.content && dbDoc.content.length > 0) {
-            // Apply restored state update and broadcast
-            Y.applyUpdate(doc, new Uint8Array(dbDoc.content), "restore");
+        const tempDoc = new Y.Doc();
+        Y.applyUpdate(tempDoc, new Uint8Array(revisionContent));
+
+        const currentFragment = doc.getXmlFragment("default");
+        const snapshotFragment = tempDoc.getXmlFragment("default");
+
+        doc.transact(() => {
+            if (currentFragment.length > 0) {
+                currentFragment.delete(0, currentFragment.length);
+            }
+            
+            const elementsToInsert = snapshotFragment.toArray().map(el => {
+                if (el && typeof (el as any).clone === 'function') {
+                    return (el as any).clone();
+                }
+                return el;
+            });
+            
+            if (elementsToInsert.length > 0) {
+                currentFragment.insert(0, elementsToInsert);
+            }
+        }, "restore");
+
+        const newState = Buffer.from(Y.encodeStateAsUpdate(doc));
+
+        if (!isDocActive) {
+            docs.delete(documentId);
         }
+
+        return newState;
     } catch (err) {
-        console.error(`Failed to reload document ${documentId} from DB:`, err);
+        console.error(`Failed to restore document ${documentId} state:`, err);
+        throw err;
     }
 };
 
