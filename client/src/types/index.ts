@@ -6,4 +6,6 @@ export interface DocumentItem {
     lastModified: string;
     owner: { name: string; email: string };
     shares: { userId: string; permission: string }[];
+    _count?: { comments: number };
+    commentCount?: number;
 }

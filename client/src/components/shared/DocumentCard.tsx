@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Copy, Trash2, Clock } from "lucide-react";
+import { FileText, Copy, Trash2, Clock, MessageSquare } from "lucide-react";
 import { DocumentItem } from "../../types";
 
 interface DocumentCardProps {
@@ -51,6 +51,12 @@ export const DocumentCard: React.FC<DocumentCardProps> = ({
                 <p className="text-xs text-slate-500 flex items-center space-x-1.5">
                     <Clock className="h-3.5 w-3.5" />
                     <span>Modified {new Date(doc.lastModified).toLocaleDateString()}</span>
+                    {doc.commentCount !== undefined && (
+                        <span className="flex items-center ml-2">
+                            <MessageSquare className="h-3.5 w-3.5 mr-0.5" />
+                            {doc.commentCount}
+                        </span>
+                    )}
                 </p>
             </div>
 
