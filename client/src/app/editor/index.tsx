@@ -129,16 +129,13 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
 
         const updateAwareness = () => {
             const states = Array.from(provider.awareness.getStates().values());
+            // Filter to states that have a user object
             setOnlineUsers(states.filter((s: any) => s.user));
         };
+        
         provider.awareness.on("change", updateAwareness);
-
-        if (session?.user?.name) {
-            provider.awareness.setLocalStateField("user", {
-                name: session.user.name,
-                color: "#6366f1",
-            });
-        }
+        // Call immediately to populate already-connected users
+        updateAwareness();
 
         const handleStatus = (event: { status: string }) => {
             setIsSaving(event.status !== "connected");

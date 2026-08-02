@@ -24,6 +24,25 @@ const awarenessStatesToArray = (states: Map<number, any>) => {
     });
 };
 
+const customCursorBuilder = (user: { name: string; color: string }) => {
+    const cursor = document.createElement("span");
+    cursor.classList.add("collaboration-cursor__caret");
+    cursor.setAttribute("style", `border-color: ${user.color}`);
+
+    const label = document.createElement("div");
+    label.classList.add("collaboration-cursor__label");
+    label.setAttribute("style", `background-color: ${user.color}`);
+
+    label.innerHTML = `
+        <span class="cursor-status-dot"></span>
+        <span class="cursor-name">${user.name}</span>
+        <span class="cursor-status-text">is typing...</span>
+    `;
+
+    cursor.appendChild(label);
+    return cursor;
+};
+
 export const CollaborationCursor = Extension.create<CollaborationCursorOptions>({
     name: "collaborationCursor",
 
@@ -34,7 +53,7 @@ export const CollaborationCursor = Extension.create<CollaborationCursorOptions>(
                 name: "Guest",
                 color: "#6366f1",
             },
-            render: defaultCursorBuilder,
+            render: customCursorBuilder,
             selectionRender: defaultSelectionBuilder,
         };
     },
