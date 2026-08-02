@@ -11,7 +11,7 @@ import { api } from "../../lib/api";
 import { useSession } from "../../lib/auth-client";
 import {
     ArrowLeft, Share2, MessageSquare, History, Cloud, CloudCheck,
-    RotateCcw, Trash2, Shield, UserPlus, Lock, AlertCircle, Loader2
+    RotateCcw, Trash2, Shield, UserPlus, Lock, AlertCircle, Loader2, CheckCircle2
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -40,6 +40,11 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
     const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState("");
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+    const [replyingTo, setReplyingTo] = useState<string | null>(null);
+    const [replyContent, setReplyContent] = useState("");
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState("");
+
 
     // Revisions state
     const [revisions, setRevisions] = useState<any[]>([]);
@@ -187,6 +192,42 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
         }
     };
 
+    const handleAddReply = async (parentId: string) => {
+        if (!replyContent.trim()) return;
+        try {
+            await api.post(`/documents/${id}/comments`, { content: replyContent, parentId });
+            setReplyContent("");
+            setReplyingTo(null);
+            fetchComments();
+            toast.success("Reply added");
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || "Failed to add reply");
+        }
+    };
+
+    const handleEditComment = async (commentId: string) => {
+        if (!editContent.trim()) return;
+        try {
+            await api.patch(`/documents/${id}/comments/${commentId}`, { content: editContent });
+            setEditContent("");
+            setEditingCommentId(null);
+            fetchComments();
+            toast.success("Comment updated");
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || "Failed to update comment");
+        }
+    };
+
+    const handleToggleResolve = async (commentId: string, currentResolved: boolean) => {
+        try {
+            await api.patch(`/documents/${id}/comments/${commentId}`, { isResolved: !currentResolved });
+            fetchComments();
+            toast.success(currentResolved ? "Comment unresolved" : "Comment resolved");
+        } catch (err: any) {
+            toast.error(err.response?.data?.error || "Failed to update comment status");
+        }
+    };
+
     const handleDeleteComment = async (commentId: string) => {
         try {
             await api.delete(`/documents/${id}/comments/${commentId}`);
@@ -196,6 +237,19 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
             toast.error(err.response?.data?.error || "Failed to delete comment");
         }
     };
+
+    // Polling for comments
+    useEffect(() => {
+        if (activeTab !== "comments") return;
+        const interval = setInterval(() => {
+            fetchComments();
+        }, 4000);
+        return () => clearInterval(interval);
+    }, [activeTab, id]);
+
+    // Compute total discussion count
+    const totalDiscussionCount = comments.reduce((acc, c) => acc + 1 + (c.replies?.length || 0), 0);
+
 
     const handleAddShare = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -354,9 +408,9 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                         >
                             <MessageSquare className="h-4 w-4 mr-1.5" />
                             <span className="hidden sm:inline">Comments</span>
-                            {comments.length > 0 && (
+                            {totalDiscussionCount > 0 && (
                                 <span className="ml-1.5 rounded-full bg-slate-200 px-1.5 py-0.2 text-[10px] font-bold text-slate-700">
-                                    {comments.length}
+                                    {totalDiscussionCount}
                                 </span>
                             )}
                         </Button>
@@ -425,34 +479,200 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                                             <span>You have view-only access and cannot post comments on this document.</span>
                                         </div>
                                     )}
-                                    <div className="space-y-4 pt-2">
-                                        {comments.map((c) => (
-                                            <div key={c.id} className="rounded-lg border border-slate-200 p-3 bg-slate-50/50 space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center space-x-2">
-                                                        <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                                                            {c.author?.name?.[0]?.toUpperCase() || "U"}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-semibold text-slate-800">{c.author?.name || "Anonymous"}</p>
-                                                            <p className="text-[10px] text-slate-400">
-                                                                {new Date(c.createdAt).toLocaleDateString()} at {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
+                                    <div className="space-y-6 pt-2 pb-4">
+                                        {comments.map((c) => {
+                                            const isEditing = editingCommentId === c.id;
+                                            const isMyComment = session?.user?.id === c.userId;
+                                            
+                                            return (
+                                                <div key={c.id} className={`space-y-3 ${c.isResolved ? "opacity-70 transition-opacity hover:opacity-100" : ""}`}>
+                                                    {/* Top-level comment */}
+                                                    <div className={`flex w-full ${isMyComment ? "justify-end" : "justify-start"}`}>
+                                                        <div className={`w-[90%] rounded-2xl p-3 space-y-2 ${isMyComment ? "bg-indigo-50 border border-indigo-100 rounded-tr-sm" : "bg-white border border-slate-200 shadow-sm rounded-tl-sm"} ${c.isResolved ? "bg-slate-50 border-slate-200" : ""}`}>
+                                                            <div className={`flex items-center justify-between ${isMyComment ? "flex-row-reverse" : "flex-row"}`}>
+                                                                <div className={`flex items-center space-x-2 ${isMyComment ? "space-x-reverse" : ""}`}>
+                                                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 ${isMyComment ? "bg-indigo-200 text-indigo-800" : "bg-slate-100 text-slate-700"} ${c.isResolved ? "bg-slate-200 text-slate-500" : ""}`}>
+                                                                        {c.user?.name?.[0]?.toUpperCase() || "U"}
+                                                                    </div>
+                                                                    <div className={`flex flex-col ${isMyComment ? "items-end" : "items-start"}`}>
+                                                                        <div className="flex items-center space-x-1">
+                                                                            <p className="text-xs font-semibold text-slate-800">{c.user?.name || "Anonymous"}</p>
+                                                                            {c.isResolved && (
+                                                                                <span className="flex items-center text-[9px] font-medium text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100 ml-1">
+                                                                                    <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />
+                                                                                    Resolved
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <p className="text-[9px] text-slate-400">
+                                                                            {new Date(c.createdAt).toLocaleDateString()} at {new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                            {c.createdAt !== c.updatedAt && " (edited)"}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center space-x-1">
+                                                                    {canComment && (
+                                                                        <button
+                                                                            onClick={() => { setReplyingTo(replyingTo === c.id ? null : c.id); setReplyContent(""); }}
+                                                                            className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded text-[10px] font-medium"
+                                                                        >
+                                                                            Reply
+                                                                        </button>
+                                                                    )}
+                                                                    {(isMyComment || isOwner) && (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => handleToggleResolve(c.id, c.isResolved)}
+                                                                                className={`p-1 rounded text-[10px] font-medium transition-colors ${c.isResolved ? "text-slate-400 hover:text-amber-600" : "text-emerald-500 hover:text-emerald-700"}`}
+                                                                            >
+                                                                                {c.isResolved ? "Unresolve" : "Resolve"}
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => { setEditingCommentId(isEditing ? null : c.id); setEditContent(c.content); }}
+                                                                                className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded text-[10px] font-medium"
+                                                                            >
+                                                                                Edit
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleDeleteComment(c.id)}
+                                                                                className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded"
+                                                                                title="Delete comment"
+                                                                            >
+                                                                                <Trash2 className="h-3 w-3" />
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            {isEditing ? (
+                                                                <div className="space-y-2 mt-2">
+                                                                    <textarea
+                                                                        value={editContent}
+                                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                                        className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                                                                        rows={2}
+                                                                    />
+                                                                    <div className={`flex items-center space-x-2 ${isMyComment ? "justify-end" : "justify-start"}`}>
+                                                                        <Button size="sm" onClick={() => handleEditComment(c.id)} disabled={!editContent.trim()} className="h-7 px-3 text-xs">Save</Button>
+                                                                        <Button size="sm" variant="outline" onClick={() => setEditingCommentId(null)} className="h-7 px-3 text-xs bg-white">Cancel</Button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className={`text-xs text-slate-700 whitespace-pre-wrap ${isMyComment ? "text-right mr-8" : "text-left ml-8"}`}>{c.content}</p>
+                                                            )}
                                                         </div>
                                                     </div>
-                                                    {(session?.user?.id === c.authorId || isOwner) && (
-                                                        <button
-                                                            onClick={() => handleDeleteComment(c.id)}
-                                                            className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded"
-                                                            title="Delete comment"
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </button>
+
+                                                    {/* Replies */}
+                                                    {c.replies && c.replies.length > 0 && (
+                                                        <div className="space-y-3 mt-3">
+                                                            {c.replies.map((r: any) => {
+                                                                const isEditingReply = editingCommentId === r.id;
+                                                                const isMyReply = session?.user?.id === r.userId;
+                                                                return (
+                                                                    <div key={r.id} className={`flex w-full ${isMyReply ? "justify-end" : "justify-start"} ${r.isResolved ? "opacity-70 transition-opacity hover:opacity-100" : ""}`}>
+                                                                        <div className={`w-[85%] rounded-2xl p-2.5 space-y-1.5 ${isMyReply ? "bg-indigo-50/70 border border-indigo-100 rounded-tr-sm" : "bg-white border border-slate-100 shadow-sm rounded-tl-sm"} ${r.isResolved ? "bg-slate-50 border-slate-200" : ""}`}>
+                                                                            <div className={`flex items-center justify-between ${isMyReply ? "flex-row-reverse" : "flex-row"}`}>
+                                                                                <div className={`flex items-center space-x-2 ${isMyReply ? "space-x-reverse" : ""}`}>
+                                                                                    <div className={`h-5 w-5 rounded-full flex items-center justify-center font-bold text-[10px] flex-shrink-0 ${isMyReply ? "bg-indigo-200 text-indigo-800" : "bg-slate-100 text-slate-600"} ${r.isResolved ? "bg-slate-200 text-slate-500" : ""}`}>
+                                                                                        {r.user?.name?.[0]?.toUpperCase() || "U"}
+                                                                                    </div>
+                                                                                    <div className={`flex flex-col ${isMyReply ? "items-end" : "items-start"}`}>
+                                                                                        <div className="flex items-center space-x-1">
+                                                                                            <p className="text-[11px] font-semibold text-slate-800">{r.user?.name || "Anonymous"}</p>
+                                                                                            {r.isResolved && (
+                                                                                                <span className="flex items-center text-[8px] font-medium text-emerald-600 bg-emerald-50 px-1 rounded border border-emerald-100 ml-1">
+                                                                                                    <CheckCircle2 className="w-2 h-2 mr-0.5" />
+                                                                                                    Resolved
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <p className="text-[9px] text-slate-400">
+                                                                                            {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                            {r.createdAt !== r.updatedAt && " (edited)"}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div className="flex items-center space-x-1">
+                                                                                    {canComment && (
+                                                                                        <button
+                                                                                            onClick={() => { setReplyingTo(replyingTo === c.id ? null : c.id); setReplyContent(""); }}
+                                                                                            className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded text-[10px] font-medium"
+                                                                                        >
+                                                                                            Reply
+                                                                                        </button>
+                                                                                    )}
+                                                                                    {(isMyReply || isOwner) && (
+                                                                                        <>
+                                                                                            <button
+                                                                                                onClick={() => handleToggleResolve(r.id, r.isResolved)}
+                                                                                                className={`p-1 rounded text-[10px] font-medium transition-colors ${r.isResolved ? "text-slate-400 hover:text-amber-600" : "text-emerald-500 hover:text-emerald-700"}`}
+                                                                                            >
+                                                                                                {r.isResolved ? "Unresolve" : "Resolve"}
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => { setEditingCommentId(isEditingReply ? null : r.id); setEditContent(r.content); }}
+                                                                                                className="text-slate-400 hover:text-indigo-600 transition-colors p-1 rounded text-[10px] font-medium"
+                                                                                            >
+                                                                                                Edit
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => handleDeleteComment(r.id)}
+                                                                                                className="text-slate-400 hover:text-red-600 transition-colors p-1 rounded"
+                                                                                                title="Delete reply"
+                                                                                            >
+                                                                                                <Trash2 className="h-3 w-3" />
+                                                                                            </button>
+                                                                                        </>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                            
+                                                                            {isEditingReply ? (
+                                                                                <div className="space-y-2 mt-1">
+                                                                                    <textarea
+                                                                                        value={editContent}
+                                                                                        onChange={(e) => setEditContent(e.target.value)}
+                                                                                        className="w-full rounded border border-slate-300 p-1.5 text-xs focus:border-indigo-500 focus:outline-none bg-white"
+                                                                                        rows={2}
+                                                                                    />
+                                                                                    <div className={`flex items-center space-x-2 ${isMyReply ? "justify-end" : "justify-start"}`}>
+                                                                                        <Button size="sm" onClick={() => handleEditComment(r.id)} disabled={!editContent.trim()} className="h-6 text-[10px] px-2">Save</Button>
+                                                                                        <Button size="sm" variant="outline" onClick={() => setEditingCommentId(null)} className="h-6 text-[10px] px-2 bg-white">Cancel</Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <p className={`text-[11px] text-slate-700 whitespace-pre-wrap ${isMyReply ? "text-right mr-7" : "text-left ml-7"}`}>{r.content}</p>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Reply Composer */}
+                                                    {replyingTo === c.id && (
+                                                        <div className="flex w-full justify-end mt-2">
+                                                            <div className="w-[90%] bg-indigo-50/50 rounded-2xl p-3 border border-indigo-100">
+                                                                <textarea
+                                                                    value={replyContent}
+                                                                    onChange={(e) => setReplyContent(e.target.value)}
+                                                                    placeholder="Write a reply..."
+                                                                    className="w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-indigo-500 focus:outline-none bg-white"
+                                                                    rows={2}
+                                                                />
+                                                                <div className="flex items-center justify-end space-x-2 mt-2">
+                                                                    <Button size="sm" variant="outline" onClick={() => setReplyingTo(null)} className="h-7 px-3 text-xs bg-white">Cancel</Button>
+                                                                    <Button size="sm" onClick={() => handleAddReply(c.id)} disabled={!replyContent.trim()} className="h-7 px-3 text-xs">Reply</Button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     )}
                                                 </div>
-                                                <p className="text-xs text-slate-700 whitespace-pre-wrap pl-8">{c.content}</p>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                         {comments.length === 0 && (
                                             <p className="text-xs text-slate-400 italic text-center py-4">No comments yet</p>
                                         )}

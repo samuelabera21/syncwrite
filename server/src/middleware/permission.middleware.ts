@@ -31,6 +31,7 @@ export async function getDocumentAndRole(documentId: string, userId: string) {
                     user: { select: { id: true, name: true, email: true, image: true } },
                 },
             },
+            _count: { select: { comments: true } },
         },
     });
 

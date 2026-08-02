@@ -116,6 +116,10 @@ export const updateComment = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Comment not found on this document" });
         }
 
+        if (role === "NONE" || role === "VIEWER") {
+            return res.status(403).json({ error: "Forbidden: You do not have permission to update comments" });
+        }
+
         const isOwner = role === "OWNER";
         const isAuthor = comment.userId === userId;
 
@@ -161,6 +165,10 @@ export const deleteComment = async (req: Request, res: Response) => {
 
         if (!comment || comment.documentId !== documentId) {
             return res.status(404).json({ error: "Comment not found on this document" });
+        }
+
+        if (role === "NONE" || role === "VIEWER") {
+            return res.status(403).json({ error: "Forbidden: You do not have permission to delete comments" });
         }
 
         const isOwner = role === "OWNER";
