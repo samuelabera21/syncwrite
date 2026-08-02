@@ -158,18 +158,19 @@
   }
 
   /* Page Numbers Display */
-  .editor-page[data-page-number-style="bottom-left"] .editor-page-break::before,
-  .editor-page[data-page-number-style="bottom-center"] .editor-page-break::before,
-  .editor-page[data-page-number-style="bottom-right"] .editor-page-break::before {
+  .editor-page[data-page-number-style^="bottom-"] .editor-page-break::before,
+  .editor-page[data-page-number-style^="top-"] .editor-page-break::after {
     content: attr(data-page-number);
     position: absolute;
-    top: -40px; /* At the bottom of the preceding page */
     font-size: 11pt;
     color: #000;
   }
-  .editor-page[data-page-number-style="bottom-left"]::after,
-  .editor-page[data-page-number-style="bottom-center"]::after,
-  .editor-page[data-page-number-style="bottom-right"]::after {
+  
+  /* Bottom positioning */
+  .editor-page[data-page-number-style^="bottom-"] .editor-page-break::before {
+    top: -40px; /* At the bottom of the preceding page */
+  }
+  .editor-page[data-page-number-style^="bottom-"]::after {
     content: attr(data-total-pages);
     position: absolute;
     bottom: 40px; /* At the bottom of the last page */
@@ -177,17 +178,40 @@
     color: #000;
   }
   
+  /* Top positioning */
+  .editor-page[data-page-number-style^="top-"] .editor-page-break::after {
+    top: 40px; /* At the top of the next page */
+  }
+  .editor-page[data-page-number-style^="top-"]::before {
+    content: attr(data-first-page-number);
+    position: absolute;
+    top: 40px;
+    font-size: 11pt;
+    color: #000;
+  }
+
+  
   /* Alignment for bottom-left (Plain Number 1) */
   .editor-page[data-page-number-style="bottom-left"] .editor-page-break::before { left: 0; }
   .editor-page[data-page-number-style="bottom-left"]::after { left: 96px; }
 
-  /* Alignment for bottom-center (Plain Number 2) */
-  .editor-page[data-page-number-style="bottom-center"] .editor-page-break::before { left: 50%; transform: translateX(-50%); }
-  .editor-page[data-page-number-style="bottom-center"]::after { left: 50%; transform: translateX(-50%); }
+  /* Alignment for left (Plain Number 1) */
+  .editor-page[data-page-number-style$="-left"] .editor-page-break::before,
+  .editor-page[data-page-number-style$="-left"] .editor-page-break::after { left: 0; }
+  .editor-page[data-page-number-style$="-left"]::after,
+  .editor-page[data-page-number-style$="-left"]::before { left: 96px; }
 
-  /* Alignment for bottom-right (Plain Number 3) */
-  .editor-page[data-page-number-style="bottom-right"] .editor-page-break::before { right: 0; }
-  .editor-page[data-page-number-style="bottom-right"]::after { right: 96px; }
+  /* Alignment for center (Plain Number 2) */
+  .editor-page[data-page-number-style$="-center"] .editor-page-break::before,
+  .editor-page[data-page-number-style$="-center"] .editor-page-break::after { left: 50%; transform: translateX(-50%); }
+  .editor-page[data-page-number-style$="-center"]::after,
+  .editor-page[data-page-number-style$="-center"]::before { left: 50%; transform: translateX(-50%); }
+
+  /* Alignment for right (Plain Number 3) */
+  .editor-page[data-page-number-style$="-right"] .editor-page-break::before,
+  .editor-page[data-page-number-style$="-right"] .editor-page-break::after { right: 0; }
+  .editor-page[data-page-number-style$="-right"]::after,
+  .editor-page[data-page-number-style$="-right"]::before { right: 96px; }
 
   /* Table styling */
   .ProseMirror table {

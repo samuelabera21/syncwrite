@@ -56,6 +56,20 @@ export const Pagination = Extension.create<PaginationOptions>({
                                 let pageCount = 1;
 
                                 // We iterate over the top-level nodes of the document
+                                const docAttrs = view.state.doc.attrs;
+                                const startNum = typeof docAttrs.pageNumberStart === 'number' ? docAttrs.pageNumberStart : 1;
+                                const formatType = docAttrs.pageNumberFormat || 'numeric';
+                                
+                                const formatNumber = (num: number, format: string) => {
+                                    if (format === 'alphabetic') {
+                                        return String.fromCharCode(64 + num); // A, B, C...
+                                    } else if (format === 'roman') {
+                                        const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+                                        return num <= 20 ? roman[num - 1] : num.toString();
+                                    }
+                                    return num.toString();
+                                };
+
                                 view.state.doc.forEach((node, offset) => {
                                     const dom = view.nodeDOM(offset);
                                     if (dom instanceof HTMLElement) {
@@ -70,7 +84,7 @@ export const Pagination = Extension.create<PaginationOptions>({
                                             // Create a visual gap widget
                                             const gapWidget = document.createElement('div');
                                             gapWidget.className = 'editor-page-break';
-                                            gapWidget.setAttribute('data-page-number', pageCount.toString());
+                                            gapWidget.setAttribute('data-page-number', formatNumber(pageCount + startNum - 1, formatType));
                                             gapWidget.innerHTML = `<div class="editor-page-break-content"></div>`;
                                             
                                             decorations.push(
@@ -89,12 +103,13 @@ export const Pagination = Extension.create<PaginationOptions>({
                                     }
                                 });
 
-                                view.dom.setAttribute('data-total-pages', pageCount.toString());
+                                view.dom.setAttribute('data-first-page-number', formatNumber(startNum, formatType));
+                                view.dom.setAttribute('data-total-pages', formatNumber(pageCount + startNum - 1, formatType));
 
                                 const decorationSet = DecorationSet.create(view.state.doc, decorations);
                                 
                                 // Only dispatch if decorations changed
-                                const currentSet = view.state.plugins.find(p => p.key === PaginationPluginKey)?.getState(view.state);
+                                const currentSet = PaginationPluginKey.getState(view.state);
                                 if (!currentSet || currentSet.find().length !== decorations.length) {
                                     view.dispatch(view.state.tr.setMeta(PaginationPluginKey, { decorations: decorationSet }));
                                 }
