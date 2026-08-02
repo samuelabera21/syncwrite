@@ -403,7 +403,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                         <ExportImportMenu editor={editor} documentTitle={documentTitle} />
 
                         <Button
-                            variant={activeTab === "share" ? "default" : "outline"}
+                            variant={activeTab === "share" ? "primary" : "outline"}
                             size="sm"
                             onClick={() => setActiveTab(activeTab === "share" ? null : "share")}
                         >
@@ -417,7 +417,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                         </Button>
 
                         <Button
-                            variant={activeTab === "comments" ? "default" : "outline"}
+                            variant={activeTab === "comments" ? "primary" : "outline"}
                             size="sm"
                             onClick={() => setActiveTab(activeTab === "comments" ? null : "comments")}
                         >
@@ -431,7 +431,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                         </Button>
 
                         <Button
-                            variant={activeTab === "history" ? "default" : "outline"}
+                            variant={activeTab === "history" ? "primary" : "outline"}
                             size="sm"
                             onClick={() => setActiveTab(activeTab === "history" ? null : "history")}
                         >
@@ -931,7 +931,7 @@ function RevisionPreviewModal({ revision, onClose, onRestore }: { revision: any,
                 const values = Object.values(revision.content) as number[];
                 updateBytes = new Uint8Array(values);
             } else {
-                let formatStr = typeof revision.content;
+                let formatStr: string = typeof revision.content;
                 if (formatStr === 'object') {
                     formatStr = JSON.stringify(revision.content).substring(0, 60);
                 }

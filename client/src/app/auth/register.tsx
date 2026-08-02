@@ -49,19 +49,19 @@ export default function Register() {
 
     if (isSuccess) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 font-sans selection:bg-indigo-500/30">
-                <div className="w-full max-w-md rounded-2xl bg-slate-900/50 p-8 shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-800 text-center backdrop-blur-md">
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 font-sans selection:bg-indigo-500/30 transition-colors">
+                <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 text-center dark:backdrop-blur-md transition-colors">
                     <div className="flex flex-col items-center mb-6">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 mb-4 shadow-sm border border-emerald-500/20">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 mb-4 shadow-sm dark:border dark:border-emerald-500/20">
                             <FileText className="h-8 w-8" />
                         </div>
-                        <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Check your email</h1>
+                        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight transition-colors">Check your email</h1>
                     </div>
-                    <p className="text-slate-300 mb-8 leading-relaxed">
-                        We've sent a verification link to <span className="font-semibold text-slate-100">{successEmail}</span>. 
+                    <p className="text-slate-600 dark:text-slate-300 mb-8 leading-relaxed transition-colors">
+                        We've sent a verification link to <span className="font-semibold text-slate-800 dark:text-slate-100 transition-colors">{successEmail}</span>. 
                         Please check your inbox and click the link to verify your account.
                     </p>
-                    <p className="text-sm text-slate-500 mb-6">
+                    <p className="text-sm text-slate-500 transition-colors">
                         (Dev Note: Check your terminal for the mock email link)
                     </p>
                     <Button
@@ -76,14 +76,14 @@ export default function Register() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 font-sans selection:bg-indigo-500/30">
-            <div className="w-full max-w-md rounded-2xl bg-slate-900/50 p-8 shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-800 backdrop-blur-md">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 font-sans selection:bg-indigo-500/30 transition-colors">
+            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 dark:backdrop-blur-md transition-colors">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 mb-4 shadow-sm border border-indigo-500/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-600/20 text-white dark:text-indigo-400 mb-4 shadow-sm dark:border dark:border-indigo-500/20">
                         <FileText className="h-6 w-6" />
                     </div>
-                    <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Create Account</h1>
-                    <p className="text-sm text-slate-400 mt-1.5">Join SyncWrite for real-time collaboration</p>
+                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight transition-colors">Create Account</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 transition-colors">Join SyncWrite for real-time collaboration</p>
                 </div>
 
                 {error && (
@@ -100,7 +100,6 @@ export default function Register() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="John Doe"
-                        variant="dark"
                     />
 
                     <Input
@@ -110,7 +109,6 @@ export default function Register() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@example.com"
-                        variant="dark"
                     />
 
                     <Input
@@ -120,7 +118,6 @@ export default function Register() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        variant="dark"
                     />
 
                     <Button
@@ -135,10 +132,10 @@ export default function Register() {
                 <div className="mt-6">
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-800"></div>
+                            <div className="w-full border-t border-slate-200 dark:border-slate-800 transition-colors"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="bg-slate-900/50 px-2 text-slate-400 backdrop-blur-sm">Or continue with</span>
+                            <span className="bg-white dark:bg-slate-900/50 px-2 text-slate-500 dark:text-slate-400 dark:backdrop-blur-sm transition-colors">Or continue with</span>
                         </div>
                     </div>
 
@@ -146,7 +143,7 @@ export default function Register() {
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full flex items-center justify-center gap-2 border-slate-700 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-center gap-2 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-700/50 dark:hover:text-white transition-colors"
                             onClick={async () => {
                                 setLoading(true);
                                 try {
@@ -185,9 +182,9 @@ export default function Register() {
                     </div>
                 </div>
 
-                <p className="mt-8 text-center text-sm text-slate-400">
+                <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400 transition-colors">
                     Already have an account?{" "}
-                    <Link to="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                    <Link to="/login" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
                         Sign in
                     </Link>
                 </p>

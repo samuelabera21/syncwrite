@@ -54,14 +54,14 @@ export default function Login() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 font-sans selection:bg-indigo-500/30">
-            <div className="w-full max-w-md rounded-2xl bg-slate-900/50 p-8 shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-800 backdrop-blur-md">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 font-sans selection:bg-indigo-500/30 transition-colors">
+            <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 dark:backdrop-blur-md transition-colors">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 mb-4 shadow-sm border border-indigo-500/20">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-600/20 text-white dark:text-indigo-400 mb-4 shadow-sm dark:border dark:border-indigo-500/20">
                         <FileText className="h-6 w-6" />
                     </div>
-                    <h1 className="text-2xl font-semibold text-slate-50 tracking-tight">Welcome to SyncWrite</h1>
-                    <p className="text-sm text-slate-400 mt-1.5">Sign in to access your collaborative documents</p>
+                    <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50 tracking-tight transition-colors">Welcome to SyncWrite</h1>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1.5 transition-colors">Sign in to access your collaborative documents</p>
                 </div>
 
                 {error && (
@@ -89,13 +89,12 @@ export default function Login() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@example.com"
-                        variant="dark"
                     />
 
                     <div>
                         <div className="flex justify-between items-center mb-1">
-                            <label className="text-sm font-medium text-slate-300">Password</label>
-                            <Link to="/forgot-password" className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                            <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
                                 Forgot password?
                             </Link>
                         </div>
@@ -105,7 +104,6 @@ export default function Login() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="••••••••"
-                            variant="dark"
                         />
                     </div>
 
@@ -121,10 +119,10 @@ export default function Login() {
                 <div className="mt-6">
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
-                            <div className="w-full border-t border-slate-800"></div>
+                            <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
                         </div>
                         <div className="relative flex justify-center text-sm">
-                            <span className="bg-slate-900/50 px-2 text-slate-400 backdrop-blur-sm">Or continue with</span>
+                            <span className="bg-white dark:bg-slate-900 px-2 text-slate-500 dark:text-slate-400 transition-colors">Or continue with</span>
                         </div>
                     </div>
 
@@ -132,7 +130,7 @@ export default function Login() {
                         <Button
                             type="button"
                             variant="outline"
-                            className="w-full flex items-center justify-center gap-2 border-slate-700 bg-slate-800/50 text-slate-200 hover:bg-slate-700/50 hover:text-white transition-colors"
+                            className="w-full flex items-center justify-center gap-2 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-700/50 dark:hover:text-white transition-colors"
                             onClick={async () => {
                                 setLoading(true);
                                 try {
@@ -171,9 +169,9 @@ export default function Login() {
                     </div>
                 </div>
 
-                <p className="mt-8 text-center text-sm text-slate-400">
+                <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400 transition-colors">
                     Don't have an account?{" "}
-                    <Link to="/register" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+                    <Link to="/register" className="font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
                         Create account
                     </Link>
                 </p>

@@ -4,6 +4,7 @@ import { useSession } from "./lib/auth-client";
 import { Toaster } from "react-hot-toast";
 
 import Login from "./app/auth/login";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Register from "./app/auth/register";
 import VerifyEmail from "./app/auth/VerifyEmail";
 import ForgotPassword from "./app/auth/ForgotPassword";
@@ -24,30 +25,32 @@ export default function App() {
     }
 
     return (
-        <Router>
-            <Routes>
-                <Route
-                    path="/login"
-                    element={!session ? <Login /> : <Navigate to="/" />}
-                />
-                <Route
-                    path="/register"
-                    element={!session ? <Register /> : <Navigate to="/" />}
-                />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route
-                    path="/"
-                    element={session ? <Dashboard /> : <Landing />}
-                />
-                <Route
-                    path="/document/:id"
-                    element={session ? <Editor /> : <Navigate to="/login" />}
-                />
-                <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-            <Toaster position="bottom-right" />
-        </Router>
+        <ThemeProvider>
+            <Router>
+                <Routes>
+                    <Route
+                        path="/login"
+                        element={!session ? <Login /> : <Navigate to="/" />}
+                    />
+                    <Route
+                        path="/register"
+                        element={!session ? <Register /> : <Navigate to="/" />}
+                    />
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route
+                        path="/"
+                        element={session ? <Dashboard /> : <Landing />}
+                    />
+                    <Route
+                        path="/document/:id"
+                        element={session ? <Editor /> : <Navigate to="/login" />}
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+                <Toaster position="bottom-right" />
+            </Router>
+        </ThemeProvider>
     );
 }

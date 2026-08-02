@@ -11,9 +11,9 @@ export function Hero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
-                className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-900/50 border border-slate-800 text-sm text-slate-300 mb-8 backdrop-blur-md"
+                className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 text-sm text-slate-600 dark:text-slate-300 mb-8 dark:backdrop-blur-md transition-colors"
             >
-                <Sparkles className="h-4 w-4 text-indigo-400" />
+                <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                 <span>SyncWrite is here</span>
             </motion.div>
 
@@ -21,12 +21,11 @@ export function Hero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-8 max-w-4xl"
-                style={{ lineHeight: 1.1 }}
+                className="text-5xl md:text-7xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-6 transition-colors"
             >
-                Write together, <br className="hidden sm:block" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400 animate-gradient-x">
-                    in perfect sync.
+                Write together, <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+                    think as one.
                 </span>
             </motion.h1>
 
@@ -34,7 +33,7 @@ export function Hero() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="text-lg sm:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed"
+                className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 max-w-2xl leading-relaxed transition-colors"
             >
                 The lightning-fast collaborative editor for modern teams.
                 Experience real-time presence, rich text, and granular permissions without the clutter.
@@ -48,17 +47,17 @@ export function Hero() {
             >
                 <Link
                     to="/register"
-                    className="group relative flex items-center justify-center px-8 py-3.5 text-base font-semibold text-white rounded-xl bg-indigo-600 hover:bg-indigo-500 transition-all shadow-[0_0_40px_rgba(79,70,229,0.3)] hover:shadow-[0_0_60px_rgba(79,70,229,0.5)]"
+                    className="inline-flex h-12 items-center justify-center rounded-lg bg-indigo-600 px-8 text-sm font-medium text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all dark:focus:ring-offset-slate-950"
                 >
                     Start writing for free
                     <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <a
-                    href="#features"
-                    className="px-8 py-3.5 text-base font-semibold text-slate-300 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 hover:text-white transition-all"
+                <Link
+                    to="/login"
+                    className="inline-flex h-12 items-center justify-center rounded-lg border border-slate-300 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 px-8 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white dark:backdrop-blur-md transition-all"
                 >
                     Explore Features
-                </a>
+                </Link>
             </motion.div>
 
         </section>

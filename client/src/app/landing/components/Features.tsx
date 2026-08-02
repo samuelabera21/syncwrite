@@ -39,7 +39,7 @@ export function Features() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="text-3xl md:text-5xl font-bold text-white mb-6 tracking-tight"
+                    className="text-3xl md:text-5xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight transition-colors"
                 >
                     Everything you need to <br className="hidden sm:block" />
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-violet-400">
@@ -51,7 +51,7 @@ export function Features() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.1 }}
-                    className="text-lg text-slate-400 max-w-2xl mx-auto"
+                    className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto transition-colors"
                 >
                     We've stripped away the noise so your team can focus on what matters: the content.
                 </motion.p>
@@ -65,16 +65,16 @@ export function Features() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-50px" }}
                         transition={{ duration: 0.5, delay: idx * 0.1 }}
-                        className="group relative rounded-3xl border border-slate-800 bg-slate-900/50 p-8 hover:bg-slate-800/50 transition-colors overflow-hidden"
+                        className="group relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-8 hover:bg-white dark:hover:bg-slate-800/50 transition-colors overflow-hidden shadow-sm dark:shadow-none"
                     >
                         <div className={`absolute -right-20 -top-20 w-64 h-64 bg-gradient-to-br ${feature.color} blur-[80px] rounded-full opacity-50 group-hover:opacity-100 transition-opacity`} />
                         
                         <div className="relative z-10">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-6 shadow-lg">
+                            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center mb-6 shadow-sm dark:shadow-lg transition-colors">
                                 {feature.icon}
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{feature.title}</h3>
-                            <p className="text-slate-400 leading-relaxed">
+                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight transition-colors">{feature.title}</h3>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed transition-colors">
                                 {feature.description}
                             </p>
                         </div>
