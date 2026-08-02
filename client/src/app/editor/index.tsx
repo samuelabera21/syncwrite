@@ -18,6 +18,9 @@ import toast, { Toaster } from "react-hot-toast";
 import { CollaborationCursor } from "../../lib/collaboration-cursor";
 import { EditorToolbar } from "../../components/editor/EditorToolbar";
 import { Button } from "../../components/ui/Button";
+import { NotificationsDropdown } from "../../components/shared/NotificationsDropdown";
+import { ProfileSettingsModal } from "../../components/shared/ProfileSettingsModal";
+import { ExportImportMenu } from "../../components/editor/ExportImportMenu";
 import { Input } from "../../components/ui/Input";
 
 interface CollaborativeEditorProps {
@@ -35,6 +38,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
     const [docOwner, setDocOwner] = useState<any>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [activeTab, setActiveTab] = useState<"comments" | "history" | "share" | null>(null);
+    const [showProfileSettings, setShowProfileSettings] = useState(false);
 
     // Comments state
     const [comments, setComments] = useState<any[]>([]);
@@ -370,6 +374,17 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
 
                 {/* Right Header: Online Users & Action Buttons */}
                 <div className="flex items-center space-x-3">
+                    <NotificationsDropdown />
+                    
+                    {session?.user?.image && (
+                        <img 
+                            src={session.user.image} 
+                            alt="Avatar" 
+                            className="h-8 w-8 rounded-full object-cover cursor-pointer hover:ring-2 ring-indigo-500 transition-all mr-2"
+                            onClick={() => setShowProfileSettings(true)}
+                        />
+                    )}
+
                     {/* Collaborator Avatars */}
                     <div className="flex -space-x-1.5 overflow-hidden mr-2">
                         {onlineUsers.map((u, i) => (
@@ -385,6 +400,8 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                     </div>
 
                     <div className="flex items-center space-x-2">
+                        <ExportImportMenu editor={editor} documentTitle={documentTitle} />
+
                         <Button
                             variant={activeTab === "share" ? "default" : "outline"}
                             size="sm"
@@ -849,6 +866,11 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                     onRestore={handleRestoreRevision}
                 />
             )}
+
+            <ProfileSettingsModal 
+                isOpen={showProfileSettings} 
+                onClose={() => setShowProfileSettings(false)} 
+            />
         </div>
     );
 }

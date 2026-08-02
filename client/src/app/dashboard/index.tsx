@@ -8,6 +8,8 @@ import {
 import { DocumentItem } from "../../types";
 import { DocumentCard } from "../../components/shared/DocumentCard";
 import { Button } from "../../components/ui/Button";
+import { NotificationsDropdown } from "../../components/shared/NotificationsDropdown";
+import { ProfileSettingsModal } from "../../components/shared/ProfileSettingsModal";
 
 export default function Dashboard() {
     const { data: session } = useSession();
@@ -17,6 +19,7 @@ export default function Dashboard() {
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<"recent" | "owned" | "shared">("recent");
     const [creating, setCreating] = useState(false);
+    const [showProfileSettings, setShowProfileSettings] = useState(false);
 
     const fetchDocuments = async () => {
         try {
@@ -88,10 +91,24 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex items-center space-x-5">
-                    <div className="hidden sm:block text-right">
-                        <p className="text-sm font-semibold text-slate-900 leading-tight">{session?.user?.name}</p>
+                    <NotificationsDropdown />
+                    <div 
+                        className="hidden sm:block text-right cursor-pointer hover:bg-slate-50 px-2 py-1 rounded-lg transition-colors"
+                        onClick={() => setShowProfileSettings(true)}
+                    >
+                        <p className="text-sm font-semibold text-slate-900 leading-tight">
+                            {session?.user?.name}
+                        </p>
                         <p className="text-xs text-slate-500">{session?.user?.email}</p>
                     </div>
+                    {session?.user?.image && (
+                        <img 
+                            src={session.user.image} 
+                            alt="Avatar" 
+                            className="h-8 w-8 rounded-full object-cover cursor-pointer hover:ring-2 ring-indigo-500 transition-all"
+                            onClick={() => setShowProfileSettings(true)}
+                        />
+                    )}
                     <Button
                         variant="ghost"
                         size="sm"
@@ -190,6 +207,11 @@ export default function Dashboard() {
                     </div>
                 )}
             </main>
+
+            <ProfileSettingsModal 
+                isOpen={showProfileSettings} 
+                onClose={() => setShowProfileSettings(false)} 
+            />
         </div>
     );
 }

@@ -1,11 +1,13 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useSession } from "./lib/auth-client";
+import { Toaster } from "react-hot-toast";
 
 import Login from "./app/auth/login";
 import Register from "./app/auth/register";
 import Dashboard from "./app/dashboard/index";
 import Editor from "./app/editor/index";
+import Landing from "./app/landing/index";
 
 export default function App() {
     const { data: session, isPending } = useSession();
@@ -31,7 +33,7 @@ export default function App() {
                 />
                 <Route
                     path="/"
-                    element={session ? <Dashboard /> : <Navigate to="/login" />}
+                    element={session ? <Dashboard /> : <Landing />}
                 />
                 <Route
                     path="/document/:id"
@@ -39,6 +41,7 @@ export default function App() {
                 />
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
+            <Toaster position="bottom-right" />
         </Router>
     );
 }
