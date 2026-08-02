@@ -33,6 +33,7 @@ import { LineSpacing } from "../../components/editor/extensions/LineSpacing";
 import { Indent } from "../../components/editor/extensions/Indent";
 import { Pagination } from "../../components/editor/extensions/Pagination";
 import { PageBreak } from "../../components/editor/extensions/PageBreak";
+import { CustomDocument } from "../../components/editor/extensions/CustomDocument";
 import { KeyboardShortcuts } from "../../components/editor/extensions/KeyboardShortcuts";
 import { Button } from "../../components/ui/Button";
 import { NotificationsDropdown } from "../../components/shared/NotificationsDropdown";
@@ -89,7 +90,9 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
     const editor = useEditor({
         editable: isEditable,
         extensions: [
+            CustomDocument,
             StarterKit.configure({
+                document: false,
                 undoRedo: false, // Collaboration extension handles undo/redo
                 link: { openOnClick: false },
             }),

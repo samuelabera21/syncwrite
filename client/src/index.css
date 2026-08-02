@@ -157,6 +157,38 @@
     text-transform: uppercase;
   }
 
+  /* Page Numbers Display */
+  .editor-page[data-page-number-style="bottom-left"] .editor-page-break::before,
+  .editor-page[data-page-number-style="bottom-center"] .editor-page-break::before,
+  .editor-page[data-page-number-style="bottom-right"] .editor-page-break::before {
+    content: attr(data-page-number);
+    position: absolute;
+    top: -40px; /* At the bottom of the preceding page */
+    font-size: 11pt;
+    color: #000;
+  }
+  .editor-page[data-page-number-style="bottom-left"]::after,
+  .editor-page[data-page-number-style="bottom-center"]::after,
+  .editor-page[data-page-number-style="bottom-right"]::after {
+    content: attr(data-total-pages);
+    position: absolute;
+    bottom: 40px; /* At the bottom of the last page */
+    font-size: 11pt;
+    color: #000;
+  }
+  
+  /* Alignment for bottom-left (Plain Number 1) */
+  .editor-page[data-page-number-style="bottom-left"] .editor-page-break::before { left: 0; }
+  .editor-page[data-page-number-style="bottom-left"]::after { left: 96px; }
+
+  /* Alignment for bottom-center (Plain Number 2) */
+  .editor-page[data-page-number-style="bottom-center"] .editor-page-break::before { left: 50%; transform: translateX(-50%); }
+  .editor-page[data-page-number-style="bottom-center"]::after { left: 50%; transform: translateX(-50%); }
+
+  /* Alignment for bottom-right (Plain Number 3) */
+  .editor-page[data-page-number-style="bottom-right"] .editor-page-break::before { right: 0; }
+  .editor-page[data-page-number-style="bottom-right"]::after { right: 96px; }
+
   /* Table styling */
   .ProseMirror table {
     border-collapse: collapse;

@@ -7,7 +7,8 @@ import {
     Table as TableIcon, Minus, ChevronDown, Highlighter,
     Type, RemoveFormatting, Indent as IndentIcon,
     Outdent as OutdentIcon,
-    Eye, MessageSquare, Clipboard, Scissors, Copy, FilePlus
+    Eye, MessageSquare, Clipboard, Scissors, Copy, FilePlus,
+    Hash, ChevronRight
 } from "lucide-react";
 
 interface RibbonMenuProps {
@@ -34,6 +35,8 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
     const [showHighlightMenu, setShowHighlightMenu] = useState(false);
     const [showBulletMenu, setShowBulletMenu] = useState(false);
     const [showNumberMenu, setShowNumberMenu] = useState(false);
+    const [showPageNumberMenu, setShowPageNumberMenu] = useState(false);
+    const [showPageNumberSubMenu, setShowPageNumberSubMenu] = useState(false);
     
     if (!editor) return null;
 
@@ -421,6 +424,94 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                     <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={() => (editor.commands as any).setPageBreak()}>
                                         <FilePlus className="w-6 h-6 text-[#2b579a] mb-1" />
                                         <span className="text-xs text-slate-700">Page Break</span>
+                                    </div>
+                                    <div className="relative">
+                                        <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={() => setShowPageNumberMenu(!showPageNumberMenu)}>
+                                            <Hash className="w-6 h-6 text-[#2b579a] mb-1" />
+                                            <div className="flex items-center text-xs text-slate-700">
+                                                Page Number <ChevronDown className="w-3 h-3 ml-0.5" />
+                                            </div>
+                                        </div>
+                                        {showPageNumberMenu && (
+                                            <>
+                                                <div className="fixed inset-0 z-40" onClick={() => { setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }} />
+                                                <div className="absolute top-full mt-1 left-0 bg-white border border-slate-300 shadow-xl z-50 w-56 rounded-sm py-1">
+                                                    <div 
+                                                        className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer"
+                                                        onMouseEnter={() => setShowPageNumberSubMenu(true)}
+                                                    >
+                                                        <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Top of Page</span>
+                                                        <ChevronRight className="w-3 h-3" />
+                                                    </div>
+                                                    <div className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer">
+                                                        <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Bottom of Page</span>
+                                                        <ChevronRight className="w-3 h-3" />
+                                                    </div>
+                                                    <div className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer">
+                                                        <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Page Margins</span>
+                                                        <ChevronRight className="w-3 h-3" />
+                                                    </div>
+                                                    <div className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer">
+                                                        <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Current Position</span>
+                                                        <ChevronRight className="w-3 h-3" />
+                                                    </div>
+                                                    <div className="h-px bg-slate-200 my-1 mx-2" />
+                                                    <div className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer">
+                                                        Format Page Numbers...
+                                                    </div>
+                                                    <div 
+                                                        className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer flex items-center"
+                                                        onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: null }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }}
+                                                    >
+                                                        <span className="text-red-500 font-bold mr-2 text-[10px]">X</span> Remove Page Numbers
+                                                    </div>
+                                                </div>
+
+                                                {/* Flyout Submenu */}
+                                                {showPageNumberSubMenu && (
+                                                    <div 
+                                                        className="absolute top-full mt-1 left-56 ml-0.5 bg-white border border-slate-300 shadow-xl z-50 w-64 rounded-sm"
+                                                        onMouseLeave={() => setShowPageNumberSubMenu(false)}
+                                                    >
+                                                        <div className="px-3 py-2 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                                            Simple
+                                                        </div>
+                                                        <div className="max-h-64 overflow-y-auto">
+                                                            <div 
+                                                                className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                                                                onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: 'bottom-left' }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }}
+                                                            >
+                                                                <div className="text-xs text-slate-700 mb-1">Plain Number 1</div>
+                                                                <div className="border border-slate-200 h-16 bg-white relative">
+                                                                    <div className="absolute bottom-2 left-2 text-[8px] text-slate-800">1</div>
+                                                                </div>
+                                                            </div>
+                                                            <div 
+                                                                className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                                                                onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: 'bottom-center' }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }}
+                                                            >
+                                                                <div className="text-xs text-slate-700 mb-1">Plain Number 2</div>
+                                                                <div className="border border-slate-200 h-16 bg-white relative">
+                                                                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] text-slate-800">1</div>
+                                                                </div>
+                                                            </div>
+                                                            <div 
+                                                                className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                                                                onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: 'bottom-right' }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }}
+                                                            >
+                                                                <div className="text-xs text-slate-700 mb-1">Plain Number 3</div>
+                                                                <div className="border border-slate-200 h-16 bg-white relative">
+                                                                    <div className="absolute bottom-2 right-2 text-[8px] text-slate-800">1</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="p-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex items-center hover:bg-slate-100 cursor-pointer">
+                                                            <span className="mr-2">🌐</span> More Page Numbers from Office.com
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                     <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={setLink}>
                                         <LinkIcon className="w-6 h-6 text-[#2b579a] mb-1" />

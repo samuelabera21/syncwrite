@@ -70,6 +70,7 @@ export const Pagination = Extension.create<PaginationOptions>({
                                             // Create a visual gap widget
                                             const gapWidget = document.createElement('div');
                                             gapWidget.className = 'editor-page-break';
+                                            gapWidget.setAttribute('data-page-number', pageCount.toString());
                                             gapWidget.innerHTML = `<div class="editor-page-break-content"></div>`;
                                             
                                             decorations.push(
@@ -87,6 +88,8 @@ export const Pagination = Extension.create<PaginationOptions>({
                                         }
                                     }
                                 });
+
+                                view.dom.setAttribute('data-total-pages', pageCount.toString());
 
                                 const decorationSet = DecorationSet.create(view.state.doc, decorations);
                                 
