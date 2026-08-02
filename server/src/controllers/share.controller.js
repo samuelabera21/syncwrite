@@ -94,6 +94,14 @@ const shareDocument = async (req, res) => {
                 user: { select: { id: true, name: true, email: true, image: true } },
             },
         });
+        await db_1.prisma.notification.create({
+            data: {
+                userId: targetUser.id,
+                type: "SHARE",
+                message: `${req.user.name} shared a document with you.`,
+                link: `/document/${documentId}`,
+            }
+        });
         return res.status(201).json({ share: documentShare });
     }
     catch (error) {
@@ -129,6 +137,14 @@ const updateShareRole = async (req, res) => {
             include: {
                 user: { select: { id: true, name: true, email: true, image: true } },
             },
+        });
+        await db_1.prisma.notification.create({
+            data: {
+                userId: updatedShare.userId,
+                type: "ROLE",
+                message: `${req.user.name} changed your role to ${roleToAssign} on a document.`,
+                link: `/document/${documentId}`,
+            }
         });
         return res.status(200).json({ share: updatedShare });
     }

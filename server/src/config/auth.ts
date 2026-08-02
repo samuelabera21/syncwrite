@@ -10,5 +10,25 @@ export const auth = betterAuth({
     }),
     emailAndPassword: {
         enabled: true,
+        requireEmailVerification: true,
+        sendResetPassword: async ({ user, url }: any) => {
+            const { sendEmail } = await import("../lib/email");
+            await sendEmail({
+                to: user.email,
+                subject: "Reset your SyncWrite password",
+                text: `Click the link to reset your password: ${url}`,
+            });
+        }
     },
+    emailVerification: {
+        sendOnSignUp: true,
+        sendVerificationEmail: async ({ user, url }: any) => {
+            const { sendEmail } = await import("../lib/email");
+            await sendEmail({
+                to: user.email,
+                subject: "Verify your SyncWrite email address",
+                text: `Click the link to verify your email: ${url}`,
+            });
+        },
+    }
 });

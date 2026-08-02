@@ -30,6 +30,7 @@ async function getDocumentAndRole(documentId, userId) {
                     user: { select: { id: true, name: true, email: true, image: true } },
                 },
             },
+            _count: { select: { comments: true } },
         },
     });
     if (!document) {

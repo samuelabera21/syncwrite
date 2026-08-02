@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { signUp } from "../../lib/auth-client";
 import { FileText } from "lucide-react";
+import toast from "react-hot-toast";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 
@@ -11,6 +12,11 @@ export default function Register() {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    
+    const [searchParams] = useSearchParams();
+    const isSuccess = searchParams.get("success") === "true";
+    const successEmail = searchParams.get("email") || email;
+    
     const navigate = useNavigate();
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -23,19 +29,51 @@ export default function Register() {
                 name,
                 email,
                 password,
+                callbackURL: "http://localhost:5173/login",
             });
 
             if (err) {
                 setError(err.message || "Failed to create account");
+                toast.error(err.message || "Failed to create account");
             } else {
-                navigate("/");
+                toast.success("Account created! Please check your email to verify.");
+                navigate(`/register?success=true&email=${encodeURIComponent(email)}`, { replace: true });
             }
         } catch (err: any) {
             setError("An unexpected error occurred");
+            toast.error("An unexpected error occurred");
         } finally {
             setLoading(false);
         }
     };
+
+    if (isSuccess) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+                <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm border border-slate-200/60 text-center">
+                    <div className="flex flex-col items-center mb-6">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 mb-4 shadow-sm">
+                            <FileText className="h-8 w-8" />
+                        </div>
+                        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Check your email</h1>
+                    </div>
+                    <p className="text-slate-600 mb-8 leading-relaxed">
+                        We've sent a verification link to <span className="font-semibold text-slate-800">{successEmail}</span>. 
+                        Please check your inbox and click the link to verify your account.
+                    </p>
+                    <p className="text-sm text-slate-500 mb-6">
+                        (Dev Note: Check your terminal for the mock email link)
+                    </p>
+                    <Button
+                        onClick={() => navigate("/login")}
+                        className="w-full"
+                    >
+                        Go to Login
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">

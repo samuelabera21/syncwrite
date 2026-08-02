@@ -94,11 +94,14 @@ const restoreRevision = async (req, res) => {
         if (!revision || revision.documentId !== documentId) {
             return res.status(404).json({ error: "Revision not found on this document" });
         }
-        // Update document content with the revision's content snapshot
+        // 1. Generate new CRDT operations (deletions and insertions) that revert the 
+        // current document state back to the snapshot's text. This ensures clients accept the change.
+        const restoredStateBytes = await (0, collaboration_1.restoreDocState)(documentId, revision.content);
+        // 2. Update document content with the newly appended CRDT state
         const updatedDocument = await db_1.prisma.document.update({
             where: { id: documentId },
             data: {
-                content: revision.content,
+                content: restoredStateBytes,
                 lastModified: new Date(),
             },
             include: {
@@ -106,8 +109,6 @@ const restoreRevision = async (req, res) => {
                 shares: true,
             },
         });
-        // Broadcast restored content to any active WebSocket connections
-        await (0, collaboration_1.reloadDocFromDb)(documentId);
         // Get latest version number to increment
         const latestRevision = await db_1.prisma.documentRevision.findFirst({
             where: { documentId },
@@ -118,7 +119,7 @@ const restoreRevision = async (req, res) => {
         await db_1.prisma.documentRevision.create({
             data: {
                 documentId,
-                content: revision.content,
+                content: restoredStateBytes,
                 versionNum: nextVersionNum,
                 createdBy: userId,
             },

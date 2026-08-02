@@ -77,6 +77,33 @@ const createComment = async (req, res) => {
                 user: { select: { id: true, name: true, email: true, image: true } },
             },
         });
+        // Notify parent comment author if it's a reply
+        let parentCommentAuthorId = null;
+        if (parentId) {
+            const parentComment = await db_1.prisma.comment.findUnique({ where: { id: parentId } });
+            if (parentComment && parentComment.userId !== userId) {
+                parentCommentAuthorId = parentComment.userId;
+                await db_1.prisma.notification.create({
+                    data: {
+                        userId: parentComment.userId,
+                        type: "REPLY",
+                        message: `${req.user.name} replied to your comment.`,
+                        link: `/document/${documentId}?comment=${newComment.id}`,
+                    }
+                });
+            }
+        }
+        // Notify document owner if someone else comments, and avoid duplicate if owner is also parent comment author
+        if (document.ownerId !== userId && document.ownerId !== parentCommentAuthorId) {
+            await db_1.prisma.notification.create({
+                data: {
+                    userId: document.ownerId,
+                    type: "COMMENT",
+                    message: `${req.user.name} commented on your document.`,
+                    link: `/document/${documentId}?comment=${newComment.id}`,
+                }
+            });
+        }
         return res.status(201).json({ comment: newComment });
     }
     catch (error) {
@@ -101,6 +128,9 @@ const updateComment = async (req, res) => {
         });
         if (!comment || comment.documentId !== documentId) {
             return res.status(404).json({ error: "Comment not found on this document" });
+        }
+        if (role === "NONE" || role === "VIEWER") {
+            return res.status(403).json({ error: "Forbidden: You do not have permission to update comments" });
         }
         const isOwner = role === "OWNER";
         const isAuthor = comment.userId === userId;
@@ -141,6 +171,9 @@ const deleteComment = async (req, res) => {
         });
         if (!comment || comment.documentId !== documentId) {
             return res.status(404).json({ error: "Comment not found on this document" });
+        }
+        if (role === "NONE" || role === "VIEWER") {
+            return res.status(403).json({ error: "Forbidden: You do not have permission to delete comments" });
         }
         const isOwner = role === "OWNER";
         const isAuthor = comment.userId === userId;

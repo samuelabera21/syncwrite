@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { signIn } from "../../lib/auth-client";
+import { signIn, authClient } from "../../lib/auth-client";
 import { FileText } from "lucide-react";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
@@ -11,6 +11,9 @@ export default function Login() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    const [resendLoading, setResendLoading] = useState(false);
+    const [resendSuccess, setResendSuccess] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,6 +38,21 @@ export default function Login() {
         }
     };
 
+    const handleResendVerification = async () => {
+        setResendLoading(true);
+        try {
+            await authClient.sendVerificationEmail({
+                email,
+                callbackURL: "http://localhost:5173/login"
+            });
+            setResendSuccess(true);
+        } catch (e) {
+            setError("Failed to resend verification email");
+        } finally {
+            setResendLoading(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
             <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-sm border border-slate-200/60">
@@ -47,8 +65,19 @@ export default function Login() {
                 </div>
 
                 {error && (
-                    <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100">
-                        {error}
+                    <div className="mb-6 rounded-lg bg-red-50 p-3 text-sm text-red-600 border border-red-100 flex flex-col gap-2">
+                        <span>{error}</span>
+                        {error.toLowerCase().includes("not verified") && (
+                            <Button 
+                                type="button" 
+                                onClick={handleResendVerification}
+                                isLoading={resendLoading}
+                                disabled={resendSuccess}
+                                className="w-full mt-2"
+                            >
+                                {resendSuccess ? "Verification Sent! Check your email." : "Resend Verification Email"}
+                            </Button>
+                        )}
                     </div>
                 )}
 
@@ -62,14 +91,21 @@ export default function Login() {
                         placeholder="name@example.com"
                     />
 
-                    <Input
-                        label="Password"
-                        type="password"
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                    />
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="text-sm font-medium text-slate-700">Password</label>
+                            <Link to="/forgot-password" className="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">
+                                Forgot password?
+                            </Link>
+                        </div>
+                        <Input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                        />
+                    </div>
 
                     <Button
                         type="submit"

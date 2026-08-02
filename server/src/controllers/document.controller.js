@@ -8,7 +8,7 @@ const getDocuments = async (req, res) => {
     try {
         const userId = req.user.id;
         const filter = req.query.filter;
-        const ownedDocuments = await db_1.prisma.document.findMany({
+        const ownedDocumentsRaw = await db_1.prisma.document.findMany({
             where: { ownerId: userId },
             include: {
                 owner: { select: { id: true, name: true, email: true, image: true } },
@@ -17,10 +17,17 @@ const getDocuments = async (req, res) => {
                         user: { select: { id: true, name: true, email: true, image: true } },
                     },
                 },
+                _count: { select: { comments: true } },
             },
             orderBy: { lastModified: "desc" },
         });
-        const sharedShares = await db_1.prisma.documentShare.findMany({
+        // Map to include commentCount and remove internal _count
+        const ownedDocuments = ownedDocumentsRaw.map((doc) => ({
+            ...doc,
+            commentCount: doc._count?.comments ?? 0,
+            _count: undefined,
+        }));
+        const sharedSharesRaw = await db_1.prisma.documentShare.findMany({
             where: { userId },
             include: {
                 document: {
@@ -31,11 +38,21 @@ const getDocuments = async (req, res) => {
                                 user: { select: { id: true, name: true, email: true, image: true } },
                             },
                         },
+                        _count: { select: { comments: true } },
                     },
                 },
             },
             orderBy: { document: { lastModified: "desc" } },
         });
+        // Map each shared document to include commentCount and remove internal _count
+        const sharedShares = sharedSharesRaw.map((share) => ({
+            ...share,
+            document: {
+                ...share.document,
+                commentCount: share.document._count?.comments ?? 0,
+                _count: undefined,
+            },
+        }));
         const sharedDocuments = sharedShares.map((share) => ({
             ...share.document,
             myRole: share.role,
@@ -95,6 +112,7 @@ const getDocumentById = async (req, res) => {
         return res.status(200).json({
             document,
             role,
+            commentCount: document._count?.comments ?? 0,
         });
     }
     catch (error) {

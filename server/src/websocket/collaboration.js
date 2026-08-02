@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.setupWebSocketServer = exports.reloadDocFromDb = exports.flushDoc = exports.getOrLoadDoc = exports.WSSharedDoc = void 0;
+exports.setupWebSocketServer = exports.restoreDocState = exports.flushDoc = exports.getOrLoadDoc = exports.WSSharedDoc = void 0;
 const Y = __importStar(require("yjs"));
 const db_1 = require("../config/db");
 const auth_1 = require("../config/auth");
@@ -175,26 +175,48 @@ const flushDoc = async (documentId) => {
 };
 exports.flushDoc = flushDoc;
 /**
- * Reload document state from PostgreSQL (e.g. after restoring a revision)
+ * Restore document state from a revision snapshot using CRDT transactions.
+ * This guarantees that all connected clients will accept the restored state,
+ * as it generates new deletion and insertion operations rather than rewinding time.
  */
-const reloadDocFromDb = async (documentId) => {
-    const doc = docs.get(documentId);
-    if (!doc)
-        return;
+const restoreDocState = async (documentId, revisionContent) => {
+    let doc = docs.get(documentId);
+    let isDocActive = true;
+    if (!doc) {
+        doc = await (0, exports.getOrLoadDoc)(documentId);
+        isDocActive = false;
+    }
     try {
-        const dbDoc = await db_1.prisma.document.findUnique({
-            where: { id: documentId },
-        });
-        if (dbDoc && dbDoc.content && dbDoc.content.length > 0) {
-            // Apply restored state update and broadcast
-            Y.applyUpdate(doc, new Uint8Array(dbDoc.content), "restore");
+        const tempDoc = new Y.Doc();
+        Y.applyUpdate(tempDoc, new Uint8Array(revisionContent));
+        const currentFragment = doc.getXmlFragment("default");
+        const snapshotFragment = tempDoc.getXmlFragment("default");
+        doc.transact(() => {
+            if (currentFragment.length > 0) {
+                currentFragment.delete(0, currentFragment.length);
+            }
+            const elementsToInsert = snapshotFragment.toArray().map(el => {
+                if (el && typeof el.clone === 'function') {
+                    return el.clone();
+                }
+                return el;
+            });
+            if (elementsToInsert.length > 0) {
+                currentFragment.insert(0, elementsToInsert);
+            }
+        }, "restore");
+        const newState = Buffer.from(Y.encodeStateAsUpdate(doc));
+        if (!isDocActive) {
+            docs.delete(documentId);
         }
+        return newState;
     }
     catch (err) {
-        console.error(`Failed to reload document ${documentId} from DB:`, err);
+        console.error(`Failed to restore document ${documentId} state:`, err);
+        throw err;
     }
 };
-exports.reloadDocFromDb = reloadDocFromDb;
+exports.restoreDocState = restoreDocState;
 /**
  * Send raw binary message to a WebSocket client
  */

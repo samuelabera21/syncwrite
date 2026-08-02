@@ -5,6 +5,9 @@ import { Toaster } from "react-hot-toast";
 
 import Login from "./app/auth/login";
 import Register from "./app/auth/register";
+import VerifyEmail from "./app/auth/VerifyEmail";
+import ForgotPassword from "./app/auth/ForgotPassword";
+import ResetPassword from "./app/auth/ResetPassword";
 import Dashboard from "./app/dashboard/index";
 import Editor from "./app/editor/index";
 import Landing from "./app/landing/index";
@@ -31,6 +34,9 @@ export default function App() {
                     path="/register"
                     element={!session ? <Register /> : <Navigate to="/" />}
                 />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route
                     path="/"
                     element={session ? <Dashboard /> : <Landing />}
