@@ -87,6 +87,35 @@ export const createComment = async (req: Request, res: Response) => {
             },
         });
 
+        // Notify parent comment author if it's a reply
+        let parentCommentAuthorId = null;
+        if (parentId) {
+            const parentComment = await prisma.comment.findUnique({ where: { id: parentId } });
+            if (parentComment && parentComment.userId !== userId) {
+                parentCommentAuthorId = parentComment.userId;
+                await prisma.notification.create({
+                    data: {
+                        userId: parentComment.userId,
+                        type: "REPLY",
+                        message: `${req.user!.name} replied to your comment.`,
+                        link: `/document/${documentId}?comment=${newComment.id}`,
+                    }
+                });
+            }
+        }
+
+        // Notify document owner if someone else comments, and avoid duplicate if owner is also parent comment author
+        if (document.ownerId !== userId && document.ownerId !== parentCommentAuthorId) {
+            await prisma.notification.create({
+                data: {
+                    userId: document.ownerId,
+                    type: "COMMENT",
+                    message: `${req.user!.name} commented on your document.`,
+                    link: `/document/${documentId}?comment=${newComment.id}`,
+                }
+            });
+        }
+
         return res.status(201).json({ comment: newComment });
     } catch (error) {
         console.error("Error creating comment:", error);
