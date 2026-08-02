@@ -1,6 +1,10 @@
+import "dotenv/config";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { prisma } from "./db";
+
+console.log("IN AUTH.TS SECRET:", process.env.GOOGLE_CLIENT_SECRET);
+
 
 export const auth = betterAuth({
     baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000",
@@ -19,6 +23,18 @@ export const auth = betterAuth({
                 text: `Click the link to reset your password: ${url}`,
             });
         }
+    },
+    socialProviders: {
+        google: {
+            clientId: (process.env.GOOGLE_CLIENT_ID || "").trim(),
+            clientSecret: (process.env.GOOGLE_CLIENT_SECRET || "").trim(),
+        },
+    },
+    account: {
+        accountLinking: {
+            enabled: true,
+            trustedProviders: ["google"],
+        },
     },
     emailVerification: {
         sendOnSignUp: true,

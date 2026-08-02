@@ -46,14 +46,6 @@ exports.auth = (0, better_auth_1.betterAuth)({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true,
-        sendVerificationEmail: async ({ user, url }) => {
-            const { sendEmail } = await Promise.resolve().then(() => __importStar(require("../lib/email")));
-            await sendEmail({
-                to: user.email,
-                subject: "Verify your SyncWrite email address",
-                text: `Click the link to verify your email: ${url}`,
-            });
-        },
         sendResetPassword: async ({ user, url }) => {
             const { sendEmail } = await Promise.resolve().then(() => __importStar(require("../lib/email")));
             await sendEmail({
@@ -63,4 +55,21 @@ exports.auth = (0, better_auth_1.betterAuth)({
             });
         }
     },
+    socialProviders: {
+        google: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+    },
+    emailVerification: {
+        sendOnSignUp: true,
+        sendVerificationEmail: async ({ user, url }) => {
+            const { sendEmail } = await Promise.resolve().then(() => __importStar(require("../lib/email")));
+            await sendEmail({
+                to: user.email,
+                subject: "Verify your SyncWrite email address",
+                text: `Click the link to verify your email: ${url}`,
+            });
+        },
+    }
 });

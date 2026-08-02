@@ -50,6 +50,9 @@ model Account {
   accessToken  String?
   refreshToken String?
   idToken      String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope        String?
   expiresAt    DateTime?
   password     String?
   createdAt    DateTime  @default(now())
