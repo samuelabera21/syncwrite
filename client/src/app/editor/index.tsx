@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import TextAlign from "@tiptap/extension-text-align";
-import Collaboration from "@tiptap/extension-collaboration";
+import { StarterKit } from "@tiptap/starter-kit";
+import { Placeholder } from "@tiptap/extension-placeholder";
+import { TextAlign } from "@tiptap/extension-text-align";
+import { Collaboration } from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import { api } from "../../lib/api";
@@ -16,11 +16,26 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 
 import { CollaborationCursor } from "../../lib/collaboration-cursor";
-import { EditorToolbar } from "../../components/editor/EditorToolbar";
+import { ExportImportMenu } from "../../components/editor/ExportImportMenu";
+import { RibbonMenu } from "../../components/editor/RibbonMenu";
+import { FileMenu } from "../../components/editor/FileMenu";
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import { Highlight } from '@tiptap/extension-highlight';
+import { FontFamily } from '@tiptap/extension-font-family';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { Image } from '@tiptap/extension-image';
+import { FontSize } from "../../components/editor/extensions/FontSize";
+import { LineSpacing } from "../../components/editor/extensions/LineSpacing";
+import { Indent } from "../../components/editor/extensions/Indent";
+import { Pagination } from "../../components/editor/extensions/Pagination";
+import { KeyboardShortcuts } from "../../components/editor/extensions/KeyboardShortcuts";
 import { Button } from "../../components/ui/Button";
 import { NotificationsDropdown } from "../../components/shared/NotificationsDropdown";
 import { ProfileSettingsModal } from "../../components/shared/ProfileSettingsModal";
-import { ExportImportMenu } from "../../components/editor/ExportImportMenu";
 import { Input } from "../../components/ui/Input";
 
 interface CollaborativeEditorProps {
@@ -64,6 +79,8 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
     // Presence state
     const [onlineUsers, setOnlineUsers] = useState<any[]>([]);
 
+    const [showFileMenu, setShowFileMenu] = useState(false);
+
     const isEditable = myRole === "OWNER" || myRole === "EDITOR";
     const canComment = myRole === "OWNER" || myRole === "EDITOR" || myRole === "COMMENTER";
     const isOwner = myRole === "OWNER";
@@ -79,6 +96,20 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                 placeholder: isEditable ? "Start typing your collaborative document..." : "Document is empty."
             }),
             TextAlign.configure({ types: ["heading", "paragraph"] }),
+            Color.configure({ types: [TextStyle.name, 'listItem'] }),
+            TextStyle.configure({ types: ['listItem'] } as any),
+            Highlight.configure({ multicolor: true }),
+            FontFamily,
+            FontSize,
+            LineSpacing,
+            Indent,
+            Table.configure({ resizable: true }),
+            TableRow,
+            TableHeader,
+            TableCell,
+            Image.configure({ inline: true }),
+            Pagination.configure({ pageHeight: 931 }),
+            KeyboardShortcuts,
             Collaboration.configure({ document: ydoc }),
             CollaborationCursor.configure({
                 provider,
@@ -90,7 +121,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
         ],
         editorProps: {
             attributes: {
-                class: `prose prose-slate prose-lg max-w-none focus:outline-none min-h-[700px] px-10 py-12 ${!isEditable ? "cursor-default select-text" : ""}`,
+                class: `prose prose-slate max-w-none focus:outline-none editor-page ${!isEditable ? "cursor-default select-text" : ""}`,
             },
         },
     }, [id, ydoc, provider]);
@@ -334,6 +365,25 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                     >
                         <ArrowLeft className="h-5 w-5" />
                     </button>
+                    
+                    <div className="relative flex items-center">
+                        <Button
+                            variant="primary"
+                            className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-1.5 h-auto text-sm font-medium rounded-md shadow-sm"
+                            onClick={() => setShowFileMenu(!showFileMenu)}
+                        >
+                            File
+                        </Button>
+                        <FileMenu 
+                            editor={editor} 
+                            documentTitle={documentTitle} 
+                            isOpen={showFileMenu} 
+                            onClose={() => setShowFileMenu(false)} 
+                        />
+                    </div>
+                    
+                    <div className="w-px h-6 bg-slate-300 mx-2" />
+                    
                     <div className="flex flex-col flex-1 min-w-0 max-w-lg">
                         <input
                             type="text"
@@ -442,14 +492,16 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
                 </div>
             </header>
 
-            {/* Formatting Toolbar */}
-            <EditorToolbar editor={editor} disabled={!isEditable} role={myRole} />
+            {/* New Formatting Toolbar */}
+            <RibbonMenu editor={editor} disabled={!isEditable} role={myRole} />
 
             {/* Main Workspace & Sidebar */}
             <div className="flex flex-1 overflow-hidden relative">
-                <main className="flex-1 overflow-y-auto px-4 py-8 flex justify-center">
-                    <div className="w-full max-w-4xl bg-white rounded-xl shadow-sm border border-slate-200 min-h-[800px] mb-20">
-                        <EditorContent editor={editor} />
+                <main className="flex-1 overflow-y-auto bg-[#f3f4f6]">
+                    <div className="editor-page-container">
+                        <div className="editor-page">
+                            <EditorContent editor={editor} />
+                        </div>
                     </div>
                 </main>
 

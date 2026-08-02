@@ -88,4 +88,73 @@
     0%, 100% { opacity: 1; }
     50% { opacity: .4; }
   }
+
+  /* Word-like Editor Styles */
+  .editor-page-container {
+    background-color: #f3f4f6; /* slate-100 */
+    padding: 40px 0;
+    min-height: calc(100vh - 120px);
+    display: flex;
+    justify-content: center;
+    overflow-y: auto;
+  }
+
+  /* A4 Page (794px x 1123px) */
+  .editor-page {
+    background-color: white;
+    width: 794px; 
+    min-height: 1123px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin: 0 auto;
+    padding: 96px; /* 1 inch margins all around */
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  /* The visual gap created by the Pagination extension */
+  .editor-page-break {
+    display: block;
+    height: 40px; /* Space between pages */
+    margin: 96px -96px; /* offset the page padding */
+    position: relative;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .editor-page-break-content {
+    position: absolute;
+    top: 0;
+    left: -100px;
+    right: -100px;
+    height: 40px;
+    background-color: #f3f4f6; /* Match editor-page-container background */
+    border-top: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e5e7eb;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.03), inset 0 -2px 4px 0 rgba(0, 0, 0, 0.03);
+  }
+
+  /* Table styling */
+  .ProseMirror table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .ProseMirror table td,
+  .ProseMirror table th {
+    min-width: 1em;
+    border: 1px solid #d1d5db;
+    padding: 8px;
+    vertical-align: top;
+    box-sizing: border-box;
+    position: relative;
+  }
+
+  .ProseMirror table th {
+    font-weight: bold;
+    text-align: left;
+    background-color: #f9fafb;
+  }
 }
