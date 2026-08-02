@@ -32,6 +32,7 @@ import { FontSize } from "../../components/editor/extensions/FontSize";
 import { LineSpacing } from "../../components/editor/extensions/LineSpacing";
 import { Indent } from "../../components/editor/extensions/Indent";
 import { Pagination } from "../../components/editor/extensions/Pagination";
+import { PageBreak } from "../../components/editor/extensions/PageBreak";
 import { KeyboardShortcuts } from "../../components/editor/extensions/KeyboardShortcuts";
 import { Button } from "../../components/ui/Button";
 import { NotificationsDropdown } from "../../components/shared/NotificationsDropdown";
@@ -109,6 +110,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
             TableCell,
             Image.configure({ inline: true }),
             Pagination.configure({ pageHeight: 931 }),
+            PageBreak,
             KeyboardShortcuts,
             Collaboration.configure({ document: ydoc }),
             CollaborationCursor.configure({

@@ -7,7 +7,7 @@ import {
     Table as TableIcon, Minus, ChevronDown, Highlighter,
     Type, RemoveFormatting, Indent as IndentIcon,
     Outdent as OutdentIcon,
-    Eye, MessageSquare, Clipboard, Scissors, Copy
+    Eye, MessageSquare, Clipboard, Scissors, Copy, FilePlus
 } from "lucide-react";
 
 interface RibbonMenuProps {
@@ -417,6 +417,10 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                     <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={() => editor.chain().focus().setHorizontalRule().run()}>
                                         <Minus className="w-6 h-6 text-[#2b579a] mb-1" />
                                         <span className="text-xs text-slate-700">Divider</span>
+                                    </div>
+                                    <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={() => (editor.commands as any).setPageBreak()}>
+                                        <FilePlus className="w-6 h-6 text-[#2b579a] mb-1" />
+                                        <span className="text-xs text-slate-700">Page Break</span>
                                     </div>
                                     <div className="flex flex-col items-center justify-center p-1 px-3 hover:bg-slate-200 rounded cursor-pointer transition-colors" onClick={setLink}>
                                         <LinkIcon className="w-6 h-6 text-[#2b579a] mb-1" />
