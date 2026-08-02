@@ -499,9 +499,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
             <div className="flex flex-1 overflow-hidden relative">
                 <main className="flex-1 overflow-y-auto bg-[#f3f4f6]">
                     <div className="editor-page-container">
-                        <div className="editor-page">
-                            <EditorContent editor={editor} />
-                        </div>
+                        <EditorContent editor={editor} />
                     </div>
                 </main>
 
