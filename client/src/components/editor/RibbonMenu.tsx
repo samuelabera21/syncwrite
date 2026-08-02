@@ -103,7 +103,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
     );
 
     return (
-        <div className="flex flex-col bg-[#f3f2f1] border-b border-slate-300 select-none font-sans">
+        <div className="relative z-10 flex flex-col bg-[#f3f2f1] border-b border-slate-300 select-none font-sans">
             {/* Tabs */}
             <div className="flex px-2 pt-1 space-x-1 border-b border-slate-300 bg-white/50">
                 {["Home", "Insert", "Design", "Layout", "References", "Review", "View", "Help"].map((tab) => (
@@ -123,7 +123,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
             </div>
 
             {/* Toolbar Area */}
-            <div className="bg-[#f3f2f1] flex flex-wrap items-stretch overflow-x-auto min-h-[95px]">
+            <div className="bg-[#f3f2f1] flex flex-wrap items-stretch min-h-[95px]">
                 {activeTab === "Home" && (
                     <>
                         {/* Clipboard */}
