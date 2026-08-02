@@ -40,7 +40,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
     const [showFormatPageNumberDialog, setShowFormatPageNumberDialog] = useState(false);
     const [formatPageStart, setFormatPageStart] = useState('1');
     const [formatPageStyle, setFormatPageStyle] = useState('numeric');
-    
+
     if (!editor) return null;
 
     if (disabled || role === "VIEWER" || role === "COMMENTER") {
@@ -91,9 +91,8 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
         <button
             onClick={onClick}
             title={label}
-            className={`p-1 rounded flex items-center justify-center transition-colors ${
-                isActive ? "bg-slate-300 outline outline-1 outline-slate-400" : "hover:bg-slate-200"
-            } ${className}`}
+            className={`p-1 rounded flex items-center justify-center transition-colors ${isActive ? "bg-slate-300 outline outline-1 outline-slate-400" : "hover:bg-slate-200"
+                } ${className}`}
         >
             <Icon className="w-[18px] h-[18px] text-[#2b579a]" />
         </button>
@@ -116,11 +115,10 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                     <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
-                        className={`px-3 py-1.5 text-sm transition-colors border-b-2 ${
-                            activeTab === tab 
-                                ? "border-[#2b579a] text-[#2b579a] font-semibold bg-[#f3f2f1]" 
+                        className={`px-3 py-1.5 text-sm transition-colors border-b-2 ${activeTab === tab
+                                ? "border-[#2b579a] text-[#2b579a] font-semibold bg-[#f3f2f1]"
                                 : "border-transparent text-slate-600 hover:bg-slate-200"
-                        }`}
+                            }`}
                         style={activeTab === tab ? { marginBottom: "-1px" } : {}}
                     >
                         {tab}
@@ -212,13 +210,13 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                     <RibbonButton icon={Italic} label="Italic (Ctrl+I)" isActive={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} />
                                     <RibbonButton icon={UnderlineIcon} label="Underline (Ctrl+U)" isActive={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} />
                                     <RibbonButton icon={Strikethrough} label="Strikethrough" isActive={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} />
-                                    
+
                                     <div className="w-px h-4 bg-slate-300 mx-1" />
-                                    
+
                                     {/* Text Highlight Color Split Button */}
                                     <div className="relative flex items-center group">
-                                        <button 
-                                            className="p-1 rounded-l hover:bg-slate-200 flex flex-col items-center" 
+                                        <button
+                                            className="p-1 rounded-l hover:bg-slate-200 flex flex-col items-center"
                                             onClick={() => editor.chain().focus().toggleHighlight({ color: editor.getAttributes('highlight').color || '#ffff00' }).run()}
                                         >
                                             <Highlighter className="w-[18px] h-[18px] text-[#2b579a]" style={{ borderBottom: `3px solid ${editor.getAttributes('highlight').color || '#ffff00'}` }} />
@@ -242,7 +240,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                             />
                                                         ))}
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         className="w-full text-left mt-2 text-xs hover:bg-slate-100 p-1"
                                                         onClick={() => { editor.chain().focus().unsetHighlight().run(); setShowHighlightMenu(false); }}
                                                     >
@@ -255,7 +253,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
 
                                     {/* Text Color Split Button */}
                                     <div className="relative flex items-center group">
-                                        <button 
+                                        <button
                                             className="p-1 rounded-l hover:bg-slate-200 flex flex-col items-center"
                                             onClick={() => editor.chain().focus().setColor(editor.getAttributes('textStyle').color || '#000000').run()}
                                         >
@@ -280,7 +278,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                             />
                                                         ))}
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         className="w-full text-left mt-2 text-xs hover:bg-slate-100 p-1 border-t"
                                                         onClick={() => { editor.chain().focus().unsetColor().run(); setShowColorMenu(false); }}
                                                     >
@@ -300,7 +298,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                 <div className="flex items-center space-x-0.5">
                                     {/* Bullet List Split Button */}
                                     <div className="relative flex items-center group">
-                                        <button 
+                                        <button
                                             className={`p-1 rounded-l flex items-center justify-center transition-colors ${editor.isActive("bulletList") ? "bg-slate-300 outline outline-1 outline-slate-400" : "hover:bg-slate-200"}`}
                                             onClick={() => editor.chain().focus().toggleBulletList().run()}
                                         >
@@ -335,7 +333,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
 
                                     {/* Numbered List Split Button */}
                                     <div className="relative flex items-center group">
-                                        <button 
+                                        <button
                                             className={`p-1 rounded-l flex items-center justify-center transition-colors ${editor.isActive("orderedList") ? "bg-slate-300 outline outline-1 outline-slate-400" : "hover:bg-slate-200"}`}
                                             onClick={() => editor.chain().focus().toggleOrderedList().run()}
                                         >
@@ -368,9 +366,9 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                             </>
                                         )}
                                     </div>
-                                    
+
                                     <div className="w-px h-4 bg-slate-300 mx-1" />
-                                    
+
                                     <RibbonButton icon={OutdentIcon} label="Decrease Indent" onClick={() => editor.chain().focus().decreaseIndent().run()} />
                                     <RibbonButton icon={IndentIcon} label="Increase Indent" onClick={() => editor.chain().focus().increaseIndent().run()} />
                                 </div>
@@ -437,30 +435,30 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                         </div>
                                         {showPageNumberMenu && (
                                             <>
-                                                <div className="fixed inset-0 z-40" onClick={() => { setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }} />
+                                                <div className="fixed inset-0 z-40" onClick={() => { setShowPageNumberMenu(false); setShowPageNumberSubMenu(null); }} />
                                                 <div className="absolute top-full mt-1 left-0 bg-white border border-slate-300 shadow-xl z-50 w-56 rounded-sm py-1">
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer"
                                                         onMouseEnter={() => setShowPageNumberSubMenu('top')}
                                                     >
                                                         <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Top of Page</span>
                                                         <ChevronRight className="w-3 h-3" />
                                                     </div>
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer"
                                                         onMouseEnter={() => setShowPageNumberSubMenu('bottom')}
                                                     >
                                                         <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Bottom of Page</span>
                                                         <ChevronRight className="w-3 h-3" />
                                                     </div>
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer"
                                                         onMouseEnter={() => setShowPageNumberSubMenu(null)}
                                                     >
                                                         <span className="flex items-center"><Hash className="w-3 h-3 mr-2" /> Page Margins</span>
                                                         <ChevronRight className="w-3 h-3" />
                                                     </div>
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 flex items-center justify-between cursor-pointer"
                                                         onMouseEnter={() => setShowPageNumberSubMenu(null)}
                                                     >
@@ -468,7 +466,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                         <ChevronRight className="w-3 h-3" />
                                                     </div>
                                                     <div className="h-px bg-slate-200 my-1 mx-2" />
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer"
                                                         onClick={() => {
                                                             setFormatPageStart(editor.getAttributes('document').pageNumberStart?.toString() || '1');
@@ -479,9 +477,9 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                     >
                                                         Format Page Numbers...
                                                     </div>
-                                                    <div 
+                                                    <div
                                                         className="px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-100 cursor-pointer flex items-center"
-                                                        onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: null }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(false); }}
+                                                        onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: null }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(null); }}
                                                     >
                                                         <span className="text-red-500 font-bold mr-2 text-[10px]">X</span> Remove Page Numbers
                                                     </div>
@@ -489,7 +487,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
 
                                                 {/* Flyout Submenu */}
                                                 {showPageNumberSubMenu && (
-                                                    <div 
+                                                    <div
                                                         className="absolute top-0 left-56 ml-0.5 bg-white border border-slate-300 shadow-xl z-50 w-64 rounded-sm"
                                                         onMouseLeave={() => setShowPageNumberSubMenu(null)}
                                                     >
@@ -497,7 +495,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                             Simple
                                                         </div>
                                                         <div className="max-h-64 overflow-y-auto">
-                                                            <div 
+                                                            <div
                                                                 className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
                                                                 onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: `${showPageNumberSubMenu}-left` }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(null); }}
                                                             >
@@ -506,7 +504,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                                     <div className={`absolute ${showPageNumberSubMenu === 'top' ? 'top-2' : 'bottom-2'} left-2 text-[8px] text-slate-800`}>1</div>
                                                                 </div>
                                                             </div>
-                                                            <div 
+                                                            <div
                                                                 className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
                                                                 onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: `${showPageNumberSubMenu}-center` }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(null); }}
                                                             >
@@ -515,7 +513,7 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                                     <div className={`absolute ${showPageNumberSubMenu === 'top' ? 'top-2' : 'bottom-2'} left-1/2 -translate-x-1/2 text-[8px] text-slate-800`}>1</div>
                                                                 </div>
                                                             </div>
-                                                            <div 
+                                                            <div
                                                                 className="p-2 border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
                                                                 onClick={() => { editor.commands.updateAttributes('document', { pageNumberStyle: `${showPageNumberSubMenu}-right` }); setShowPageNumberMenu(false); setShowPageNumberSubMenu(null); }}
                                                             >
@@ -538,10 +536,10 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                 <div className="fixed inset-0 z-40 bg-black/10" onClick={() => setShowFormatPageNumberDialog(false)} />
                                                 <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white border border-slate-300 shadow-2xl z-50 w-72 rounded-md p-4 flex flex-col font-sans">
                                                     <h3 className="text-sm font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-100">Page Number Format</h3>
-                                                    
+
                                                     <div className="mb-4">
                                                         <label className="block text-xs font-medium text-slate-700 mb-1">Number format:</label>
-                                                        <select 
+                                                        <select
                                                             className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                                                             value={formatPageStyle}
                                                             onChange={(e) => setFormatPageStyle(e.target.value)}
@@ -556,8 +554,8 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                         <label className="block text-xs font-medium text-slate-700 mb-1">Page numbering:</label>
                                                         <div className="flex items-center space-x-2">
                                                             <span className="text-xs text-slate-600">Start at:</span>
-                                                            <input 
-                                                                type="number" 
+                                                            <input
+                                                                type="number"
                                                                 min="1"
                                                                 className="w-16 border border-slate-300 rounded px-2 py-1 text-xs text-slate-800 focus:outline-none focus:border-blue-500"
                                                                 value={formatPageStart}
@@ -567,13 +565,13 @@ export function RibbonMenu({ editor, disabled = false, role = "OWNER" }: RibbonM
                                                     </div>
 
                                                     <div className="flex justify-end space-x-2 mt-2 pt-3 border-t border-slate-100">
-                                                        <button 
+                                                        <button
                                                             className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded border border-slate-200"
                                                             onClick={() => setShowFormatPageNumberDialog(false)}
                                                         >
                                                             Cancel
                                                         </button>
-                                                        <button 
+                                                        <button
                                                             className="px-3 py-1.5 text-xs text-white bg-blue-600 hover:bg-blue-700 rounded"
                                                             onClick={() => {
                                                                 editor.commands.updateAttributes('document', { 

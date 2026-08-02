@@ -158,46 +158,51 @@
   }
 
   /* Page Numbers Display */
-  .editor-page[data-page-number-style^="bottom-"] .editor-page-break::before,
-  .editor-page[data-page-number-style^="top-"] .editor-page-break::after {
+  .editor-page[data-page-number-style^="bottom-"] .editor-page-break::before {
     content: attr(data-page-number);
     position: absolute;
     font-size: 11pt;
     color: #000;
+    z-index: 50;
+  }
+  .editor-page[data-page-number-style^="top-"] .editor-page-break::after {
+    content: attr(data-next-page-number);
+    position: absolute;
+    font-size: 11pt;
+    color: #000;
+    z-index: 50;
   }
   
   /* Bottom positioning */
   .editor-page[data-page-number-style^="bottom-"] .editor-page-break::before {
-    top: -40px; /* At the bottom of the preceding page */
+    top: -48px; /* 0.5 inches above the bottom edge of the preceding page */
   }
   .editor-page[data-page-number-style^="bottom-"]::after {
     content: attr(data-total-pages);
     position: absolute;
-    bottom: 40px; /* At the bottom of the last page */
+    bottom: 48px; /* 0.5 inches from the bottom edge of the last page */
     font-size: 11pt;
     color: #000;
+    z-index: 50;
   }
   
   /* Top positioning */
   .editor-page[data-page-number-style^="top-"] .editor-page-break::after {
-    top: 40px; /* At the top of the next page */
+    top: 88px; /* 40px gap + 48px (0.5 inches) from the top edge of the next page */
   }
   .editor-page[data-page-number-style^="top-"]::before {
     content: attr(data-first-page-number);
     position: absolute;
-    top: 40px;
+    top: 48px; /* 0.5 inches from the top edge of the first page */
     font-size: 11pt;
     color: #000;
+    z-index: 50;
   }
 
   
-  /* Alignment for bottom-left (Plain Number 1) */
-  .editor-page[data-page-number-style="bottom-left"] .editor-page-break::before { left: 0; }
-  .editor-page[data-page-number-style="bottom-left"]::after { left: 96px; }
-
   /* Alignment for left (Plain Number 1) */
   .editor-page[data-page-number-style$="-left"] .editor-page-break::before,
-  .editor-page[data-page-number-style$="-left"] .editor-page-break::after { left: 0; }
+  .editor-page[data-page-number-style$="-left"] .editor-page-break::after { left: 96px; }
   .editor-page[data-page-number-style$="-left"]::after,
   .editor-page[data-page-number-style$="-left"]::before { left: 96px; }
 
@@ -209,7 +214,7 @@
 
   /* Alignment for right (Plain Number 3) */
   .editor-page[data-page-number-style$="-right"] .editor-page-break::before,
-  .editor-page[data-page-number-style$="-right"] .editor-page-break::after { right: 0; }
+  .editor-page[data-page-number-style$="-right"] .editor-page-break::after { right: 96px; }
   .editor-page[data-page-number-style$="-right"]::after,
   .editor-page[data-page-number-style$="-right"]::before { right: 96px; }
 

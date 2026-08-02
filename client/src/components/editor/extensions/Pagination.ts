@@ -40,81 +40,92 @@ export const Pagination = Extension.create<PaginationOptions>({
                         return this.getState(state);
                     },
                 },
-                view: () => {
+                view: (view) => {
                     let timeout: any;
 
-                    return {
-                        update: (view, prevState) => {
-                            if (view.state.doc.eq(prevState.doc)) {
-                                return;
+                    const updatePagination = (view: any, prevState?: any) => {
+                        if (prevState && view.state.doc.eq(prevState.doc)) {
+                            return;
+                        }
+
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => {
+                            const decorations: Decoration[] = [];
+                            let currentY = 0;
+                            let pageCount = 1;
+
+                            // We iterate over the top-level nodes of the document
+                            const docAttrs = view.state.doc.attrs;
+                            const startNum = typeof docAttrs.pageNumberStart === 'number' ? docAttrs.pageNumberStart : 1;
+                            const formatType = docAttrs.pageNumberFormat || 'numeric';
+
+                            const formatNumber = (num: number, format: string) => {
+                                if (format === 'alphabetic') {
+                                    return String.fromCharCode(64 + num); // A, B, C...
+                                } else if (format === 'roman') {
+                                    const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+                                    return num <= 20 ? roman[num - 1] : num.toString();
+                                }
+                                return num.toString();
+                            };
+
+                            view.state.doc.forEach((node: any, offset: number) => {
+                                const dom = view.nodeDOM(offset);
+                                if (dom instanceof HTMLElement) {
+                                    // Measure node height including margins
+                                    const style = window.getComputedStyle(dom);
+                                    const marginTop = parseFloat(style.marginTop) || 0;
+                                    const marginBottom = parseFloat(style.marginBottom) || 0;
+                                    const nodeHeight = dom.offsetHeight + marginTop + marginBottom;
+
+                                    // If adding this node exceeds the current page
+                                    if (currentY + nodeHeight > pageHeight * pageCount) {
+                                        // Create a visual gap widget
+                                        const gapWidget = document.createElement('div');
+                                        gapWidget.className = 'editor-page-break';
+                                        gapWidget.setAttribute('data-page-number', formatNumber(pageCount + startNum - 1, formatType));
+                                        gapWidget.setAttribute('data-next-page-number', formatNumber(pageCount + startNum, formatType));
+                                        gapWidget.innerHTML = `<div class="editor-page-break-content"></div>`;
+
+                                        decorations.push(
+                                            Decoration.widget(offset, gapWidget, {
+                                                side: -1,
+                                                ignoreSelection: true
+                                            })
+                                        );
+
+                                        // Reset Y relative to new page
+                                        pageCount++;
+                                        currentY = nodeHeight;
+                                    } else {
+                                        currentY += nodeHeight;
+                                    }
+                                }
+                            });
+
+                            view.dom.setAttribute('data-first-page-number', formatNumber(startNum, formatType));
+                            view.dom.setAttribute('data-total-pages', formatNumber(pageCount + startNum - 1, formatType));
+                            if (docAttrs.pageNumberStyle) {
+                                view.dom.setAttribute('data-page-number-style', docAttrs.pageNumberStyle);
+                            } else {
+                                view.dom.removeAttribute('data-page-number-style');
                             }
 
-                            clearTimeout(timeout);
-                            timeout = setTimeout(() => {
-                                const decorations: Decoration[] = [];
-                                let currentY = 0;
-                                let pageCount = 1;
+                            const decorationSet = DecorationSet.create(view.state.doc, decorations);
 
-                                // We iterate over the top-level nodes of the document
-                                const docAttrs = view.state.doc.attrs;
-                                const startNum = typeof docAttrs.pageNumberStart === 'number' ? docAttrs.pageNumberStart : 1;
-                                const formatType = docAttrs.pageNumberFormat || 'numeric';
-                                
-                                const formatNumber = (num: number, format: string) => {
-                                    if (format === 'alphabetic') {
-                                        return String.fromCharCode(64 + num); // A, B, C...
-                                    } else if (format === 'roman') {
-                                        const roman = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
-                                        return num <= 20 ? roman[num - 1] : num.toString();
-                                    }
-                                    return num.toString();
-                                };
+                            // Only dispatch if decorations changed
+                            const currentSet = PaginationPluginKey.getState(view.state);
+                            if (!currentSet || currentSet.find().length !== decorations.length) {
+                                view.dispatch(view.state.tr.setMeta(PaginationPluginKey, { decorations: decorationSet }));
+                            }
+                        }, 300);
+                    };
 
-                                view.state.doc.forEach((node, offset) => {
-                                    const dom = view.nodeDOM(offset);
-                                    if (dom instanceof HTMLElement) {
-                                        // Measure node height including margins
-                                        const style = window.getComputedStyle(dom);
-                                        const marginTop = parseFloat(style.marginTop) || 0;
-                                        const marginBottom = parseFloat(style.marginBottom) || 0;
-                                        const nodeHeight = dom.offsetHeight + marginTop + marginBottom;
+                    // Run initial check after a small delay to allow DOM to render
+                    setTimeout(() => updatePagination(view), 500);
 
-                                        // If adding this node exceeds the current page
-                                        if (currentY + nodeHeight > pageHeight * pageCount) {
-                                            // Create a visual gap widget
-                                            const gapWidget = document.createElement('div');
-                                            gapWidget.className = 'editor-page-break';
-                                            gapWidget.setAttribute('data-page-number', formatNumber(pageCount + startNum - 1, formatType));
-                                            gapWidget.innerHTML = `<div class="editor-page-break-content"></div>`;
-                                            
-                                            decorations.push(
-                                                Decoration.widget(offset, gapWidget, {
-                                                    side: -1,
-                                                    ignoreSelection: true
-                                                })
-                                            );
-                                            
-                                            // Reset Y relative to new page
-                                            pageCount++;
-                                            currentY = nodeHeight;
-                                        } else {
-                                            currentY += nodeHeight;
-                                        }
-                                    }
-                                });
-
-                                view.dom.setAttribute('data-first-page-number', formatNumber(startNum, formatType));
-                                view.dom.setAttribute('data-total-pages', formatNumber(pageCount + startNum - 1, formatType));
-
-                                const decorationSet = DecorationSet.create(view.state.doc, decorations);
-                                
-                                // Only dispatch if decorations changed
-                                const currentSet = PaginationPluginKey.getState(view.state);
-                                if (!currentSet || currentSet.find().length !== decorations.length) {
-                                    view.dispatch(view.state.tr.setMeta(PaginationPluginKey, { decorations: decorationSet }));
-                                }
-                            }, 300);
-                        },
+                    return {
+                        update: updatePagination,
                     };
                 },
             }),
