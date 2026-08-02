@@ -11,8 +11,9 @@ const comment_routes_1 = __importDefault(require("./comment.routes"));
 const revision_routes_1 = __importDefault(require("./revision.routes"));
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.requireAuth);
-// Mount sub-routes
+// Canonical sub-routes
 router.use("/:id/shares", share_routes_1.default);
+router.use("/:id/share", share_routes_1.default); // Alias for compatibility
 router.use("/:id/comments", comment_routes_1.default);
 router.use("/:id/revisions", revision_routes_1.default);
 router.route("/")

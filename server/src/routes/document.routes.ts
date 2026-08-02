@@ -16,8 +16,9 @@ const router = Router();
 
 router.use(requireAuth);
 
-// Mount sub-routes
+// Canonical sub-routes
 router.use("/:id/shares", shareRoutes);
+router.use("/:id/share", shareRoutes); // Alias for compatibility
 router.use("/:id/comments", commentRoutes);
 router.use("/:id/revisions", revisionRoutes);
 
