@@ -1,36 +1,45 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/db";
+import { PermissionRole } from "@prisma/client";
+import { getDocumentAndRole, hasMinimumRole } from "../middleware/permission.middleware";
 
-// 1. Get Document Shares / Permissions
+// Helper to normalize input role strings
+const normalizeRole = (roleInput?: string): PermissionRole => {
+    if (!roleInput) return PermissionRole.VIEWER;
+    const upper = roleInput.toUpperCase();
+    if (upper === "EDITOR") return PermissionRole.EDITOR;
+    if (upper === "COMMENTER") return PermissionRole.COMMENTER;
+    return PermissionRole.VIEWER;
+};
+
+// 1. Get Document Shares / Permissions (Viewer+)
 export const getDocumentShares = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: {
-                shares: {
-                    include: {
-                        user: { select: { id: true, name: true, email: true, image: true } },
-                    },
-                },
-            },
-        });
+        const { document, role } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const hasAccess = isOwner || document.shares.some((s) => s.userId === userId);
-
-        if (!hasAccess) {
-            return res.status(403).json({ error: "Unauthorized access to document shares" });
+        if (role === "NONE" || !hasMinimumRole(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: Unauthorized access to document shares" });
         }
 
+        const shares = await prisma.documentShare.findMany({
+            where: { documentId },
+            include: {
+                user: { select: { id: true, name: true, email: true, image: true } },
+            },
+            orderBy: { createdAt: "asc" },
+        });
+
         return res.status(200).json({
-            shares: document.shares,
+            shares,
+            owner: document.owner,
+            myRole: role,
         });
     } catch (error) {
         console.error("Error fetching document shares:", error);
@@ -38,40 +47,43 @@ export const getDocumentShares = async (req: Request, res: Response) => {
     }
 };
 
-// 2. Share Document with User
+// 2. Share Document with User (Owner Only)
 export const shareDocument = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user!.id;
-        const { email, role } = req.body;
+        const { email, role, permission } = req.body;
 
-        if (!email || !role) {
-            return res.status(400).json({ error: "Email and role are required" });
+        const effectiveRoleInput = role || permission;
+
+        if (!email || typeof email !== "string" || !email.trim()) {
+            return res.status(400).json({ error: "A valid email address is required" });
         }
 
-        // Verify document exists and requester is owner
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-        });
+        const targetEmail = email.trim().toLowerCase();
+        const roleToAssign = normalizeRole(effectiveRoleInput);
+
+        // Verify document exists and requester is the OWNER
+        const { document, role: callerRole } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        if (document.ownerId !== userId) {
+        if (callerRole !== "OWNER") {
             return res.status(403).json({ error: "Forbidden: Only the document owner can share it" });
         }
 
         // Find target user by email
         const targetUser = await prisma.user.findUnique({
-            where: { email },
+            where: { email: targetEmail },
         });
 
         if (!targetUser) {
             return res.status(404).json({ error: "User with this email does not exist" });
         }
 
-        if (targetUser.id === document.ownerId) {
+        if (targetUser.id === document.ownerId || targetUser.id === userId) {
             return res.status(400).json({ error: "Cannot share document with the owner" });
         }
 
@@ -83,11 +95,11 @@ export const shareDocument = async (req: Request, res: Response) => {
                     userId: targetUser.id,
                 },
             },
-            update: { role },
+            update: { role: roleToAssign },
             create: {
                 documentId,
                 userId: targetUser.id,
-                role,
+                role: roleToAssign,
             },
             include: {
                 user: { select: { id: true, name: true, email: true, image: true } },
@@ -101,29 +113,40 @@ export const shareDocument = async (req: Request, res: Response) => {
     }
 };
 
-// 3. Update User Permission Role
+// 3. Update User Permission Role (Owner Only)
 export const updateShareRole = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const shareId = String(req.params.shareId);
         const userId = req.user!.id;
-        const { role } = req.body;
+        const { role, permission } = req.body;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-        });
+        const roleToAssign = normalizeRole(role || permission);
+
+        const { document, role: callerRole } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        if (document.ownerId !== userId) {
+        if (callerRole !== "OWNER") {
             return res.status(403).json({ error: "Forbidden: Only the document owner can manage permissions" });
+        }
+
+        const existingShare = await prisma.documentShare.findUnique({
+            where: { id: shareId },
+        });
+
+        if (!existingShare || existingShare.documentId !== documentId) {
+            return res.status(404).json({ error: "Share record not found on this document" });
         }
 
         const updatedShare = await prisma.documentShare.update({
             where: { id: shareId },
-            data: { role },
+            data: { role: roleToAssign },
+            include: {
+                user: { select: { id: true, name: true, email: true, image: true } },
+            },
         });
 
         return res.status(200).json({ share: updatedShare });
@@ -133,23 +156,29 @@ export const updateShareRole = async (req: Request, res: Response) => {
     }
 };
 
-// 4. Revoke Document Share
+// 4. Revoke Document Share (Owner Only)
 export const revokeShare = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const shareId = String(req.params.shareId);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-        });
+        const { document, role: callerRole } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        if (document.ownerId !== userId) {
+        if (callerRole !== "OWNER") {
             return res.status(403).json({ error: "Forbidden: Only the document owner can revoke access" });
+        }
+
+        const existingShare = await prisma.documentShare.findUnique({
+            where: { id: shareId },
+        });
+
+        if (!existingShare || existingShare.documentId !== documentId) {
+            return res.status(404).json({ error: "Share record not found on this document" });
         }
 
         await prisma.documentShare.delete({

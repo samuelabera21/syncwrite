@@ -2,22 +2,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteComment = exports.updateComment = exports.createComment = exports.getComments = void 0;
 const db_1 = require("../config/db");
-// 1. Get All Comments for a Document
+const permission_middleware_1 = require("../middleware/permission.middleware");
+// 1. Get All Comments for a Document (Viewer+)
 const getComments = async (req, res) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user.id;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(documentId, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        const isOwner = document.ownerId === userId;
-        const hasAccess = isOwner || document.shares.some((s) => s.userId === userId);
-        if (!hasAccess) {
-            return res.status(403).json({ error: "Unauthorized access to comments" });
+        if (role === "NONE" || !(0, permission_middleware_1.hasMinimumRole)(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: Unauthorized access to comments" });
         }
         // Fetch top-level comments with their replies and user info
         const comments = await db_1.prisma.comment.findMany({
@@ -41,30 +37,27 @@ const getComments = async (req, res) => {
     }
 };
 exports.getComments = getComments;
-// 2. Add Comment or Reply
+// 2. Add Comment or Reply (Commenter+)
 const createComment = async (req, res) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user.id;
         const { content, parentId } = req.body;
-        if (!content) {
+        if (!content || typeof content !== "string" || !content.trim()) {
             return res.status(400).json({ error: "Comment content is required" });
         }
-        const document = await db_1.prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(documentId, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        // Check if user has permission to comment (Viewer cannot comment usually, but Commenter/Editor/Owner can)
-        const canComment = isOwner || shareRecord?.role === "COMMENTER" || shareRecord?.role === "EDITOR";
-        if (!canComment) {
-            return res.status(403).json({ error: "Forbidden: You do not have permission to add comments" });
+        // Viewers CANNOT comment. Must be COMMENTER, EDITOR, or OWNER.
+        if (!(0, permission_middleware_1.hasMinimumRole)(role, "COMMENTER")) {
+            return res.status(403).json({
+                error: "Forbidden: You do not have permission to add comments (Commenter role or higher required)",
+                currentRole: role,
+            });
         }
-        // If parentId is provided, verify it exists
+        // If parentId is provided, verify it exists and belongs to this document
         if (parentId) {
             const parentComment = await db_1.prisma.comment.findUnique({
                 where: { id: parentId },
@@ -75,7 +68,7 @@ const createComment = async (req, res) => {
         }
         const newComment = await db_1.prisma.comment.create({
             data: {
-                content,
+                content: content.trim(),
                 documentId,
                 userId,
                 parentId: parentId || null,
@@ -92,17 +85,14 @@ const createComment = async (req, res) => {
     }
 };
 exports.createComment = createComment;
-// 3. Resolve or Update Comment
+// 3. Resolve or Update Comment (Author or Document Owner)
 const updateComment = async (req, res) => {
     try {
         const documentId = String(req.params.id);
         const commentId = String(req.params.commentId);
         const userId = req.user.id;
-        const { isResolved } = req.body;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { isResolved, content } = req.body;
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(documentId, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
@@ -110,17 +100,19 @@ const updateComment = async (req, res) => {
             where: { id: commentId },
         });
         if (!comment || comment.documentId !== documentId) {
-            return res.status(404).json({ error: "Comment not found" });
+            return res.status(404).json({ error: "Comment not found on this document" });
         }
-        const isOwner = document.ownerId === userId;
+        const isOwner = role === "OWNER";
         const isAuthor = comment.userId === userId;
         if (!isOwner && !isAuthor) {
-            return res.status(403).json({ error: "Forbidden: Cannot update this comment" });
+            return res.status(403).json({ error: "Forbidden: You can only update your own comments or manage comments as the document owner" });
         }
         const updatedComment = await db_1.prisma.comment.update({
             where: { id: commentId },
             data: {
-                isResolved: isResolved !== undefined ? isResolved : comment.isResolved,
+                isResolved: isResolved !== undefined ? Boolean(isResolved) : comment.isResolved,
+                content: content !== undefined && typeof content === "string" && content.trim().length > 0 ? content.trim() : comment.content,
+                updatedAt: new Date(),
             },
             include: {
                 user: { select: { id: true, name: true, email: true, image: true } },
@@ -134,24 +126,27 @@ const updateComment = async (req, res) => {
     }
 };
 exports.updateComment = updateComment;
-// 4. Delete Own Comment
+// 4. Delete Comment (Author or Document Owner)
 const deleteComment = async (req, res) => {
     try {
         const documentId = String(req.params.id);
         const commentId = String(req.params.commentId);
         const userId = req.user.id;
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(documentId, userId);
+        if (!document) {
+            return res.status(404).json({ error: "Document not found" });
+        }
         const comment = await db_1.prisma.comment.findUnique({
             where: { id: commentId },
-            include: { document: true },
         });
         if (!comment || comment.documentId !== documentId) {
-            return res.status(404).json({ error: "Comment not found" });
+            return res.status(404).json({ error: "Comment not found on this document" });
         }
-        const isOwner = comment.document.ownerId === userId;
+        const isOwner = role === "OWNER";
         const isAuthor = comment.userId === userId;
         // Users can delete their own comments, or document owner can delete any comment
         if (!isAuthor && !isOwner) {
-            return res.status(403).json({ error: "Forbidden: You can only delete your own comments" });
+            return res.status(403).json({ error: "Forbidden: You can only delete your own comments or comments on documents you own" });
         }
         await db_1.prisma.comment.delete({
             where: { id: commentId },

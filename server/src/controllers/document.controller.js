@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.duplicateDocument = exports.deleteDocument = exports.updateDocument = exports.getDocumentById = exports.createDocument = exports.getDocuments = void 0;
 const db_1 = require("../config/db");
+const permission_middleware_1 = require("../middleware/permission.middleware");
 // 1. Get User Documents (Dashboard)
 const getDocuments = async (req, res) => {
     try {
@@ -11,6 +12,11 @@ const getDocuments = async (req, res) => {
             where: { ownerId: userId },
             include: {
                 owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: {
+                    include: {
+                        user: { select: { id: true, name: true, email: true, image: true } },
+                    },
+                },
             },
             orderBy: { lastModified: "desc" },
         });
@@ -20,6 +26,11 @@ const getDocuments = async (req, res) => {
                 document: {
                     include: {
                         owner: { select: { id: true, name: true, email: true, image: true } },
+                        shares: {
+                            include: {
+                                user: { select: { id: true, name: true, email: true, image: true } },
+                            },
+                        },
                     },
                 },
             },
@@ -53,8 +64,12 @@ const createDocument = async (req, res) => {
         const { title } = req.body;
         const newDocument = await db_1.prisma.document.create({
             data: {
-                title: title || "Untitled Document",
+                title: title && typeof title === "string" && title.trim().length > 0 ? title.trim() : "Untitled Document",
                 ownerId: userId,
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
         return res.status(201).json({ document: newDocument });
@@ -65,29 +80,21 @@ const createDocument = async (req, res) => {
     }
 };
 exports.createDocument = createDocument;
-// 3. Get Document By ID (Open Document)
+// 3. Get Document By ID (Open Document - Viewer+)
 const getDocumentById = async (req, res) => {
     try {
         const id = String(req.params.id);
         const userId = req.user.id;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id },
-            include: {
-                owner: { select: { id: true, name: true, email: true, image: true } },
-                shares: true,
-            },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(id, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        if (!isOwner && !shareRecord) {
-            return res.status(403).json({ error: "Unauthorized: You do not have access to this document" });
+        if (role === "NONE" || !(0, permission_middleware_1.hasMinimumRole)(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: You do not have access to this document" });
         }
         return res.status(200).json({
             document,
-            role: isOwner ? "OWNER" : shareRecord?.role,
+            role,
         });
     }
     catch (error) {
@@ -96,29 +103,28 @@ const getDocumentById = async (req, res) => {
     }
 };
 exports.getDocumentById = getDocumentById;
-// 4. Update / Rename Document
+// 4. Update / Rename Document (Editor+)
 const updateDocument = async (req, res) => {
     try {
         const id = String(req.params.id);
         const userId = req.user.id;
         const { title } = req.body;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id },
-            include: { shares: true },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(id, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        const isEditor = shareRecord?.role === "EDITOR";
-        if (!isOwner && !isEditor) {
+        if (!(0, permission_middleware_1.hasMinimumRole)(role, "EDITOR")) {
             return res.status(403).json({ error: "Forbidden: You require editor permissions to modify this document" });
         }
         const updatedDocument = await db_1.prisma.document.update({
             where: { id },
             data: {
-                title: title !== undefined ? title : document.title,
+                title: title !== undefined && typeof title === "string" ? title.trim() || "Untitled Document" : document.title,
+                lastModified: new Date(),
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
         return res.status(200).json({ document: updatedDocument });
@@ -129,18 +135,16 @@ const updateDocument = async (req, res) => {
     }
 };
 exports.updateDocument = updateDocument;
-// 5. Delete Document
+// 5. Delete Document (Owner Only)
 const deleteDocument = async (req, res) => {
     try {
         const id = String(req.params.id);
         const userId = req.user.id;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(id, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        if (document.ownerId !== userId) {
+        if (role !== "OWNER") {
             return res.status(403).json({ error: "Forbidden: Only the document owner can delete it" });
         }
         await db_1.prisma.document.delete({
@@ -154,28 +158,27 @@ const deleteDocument = async (req, res) => {
     }
 };
 exports.deleteDocument = deleteDocument;
-// 6. Duplicate Document
+// 6. Duplicate Document (Viewer+)
 const duplicateDocument = async (req, res) => {
     try {
         const id = String(req.params.id);
         const userId = req.user.id;
-        const document = await db_1.prisma.document.findUnique({
-            where: { id },
-            include: { shares: true },
-        });
+        const { document, role } = await (0, permission_middleware_1.getDocumentAndRole)(id, userId);
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        if (!isOwner && !shareRecord) {
-            return res.status(403).json({ error: "Unauthorized access to document" });
+        if (role === "NONE" || !(0, permission_middleware_1.hasMinimumRole)(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: Unauthorized access to document" });
         }
         const duplicated = await db_1.prisma.document.create({
             data: {
                 title: `${document.title} (Copy)`,
                 content: document.content,
                 ownerId: userId,
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
         return res.status(201).json({ document: duplicated });

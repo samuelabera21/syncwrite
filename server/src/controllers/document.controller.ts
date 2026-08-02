@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/db";
+import { getDocumentAndRole, hasMinimumRole } from "../middleware/permission.middleware";
 
 // 1. Get User Documents (Dashboard)
 export const getDocuments = async (req: Request, res: Response) => {
@@ -7,25 +8,52 @@ export const getDocuments = async (req: Request, res: Response) => {
         const userId = req.user!.id;
         const filter = req.query.filter as string;
 
-        const ownedDocuments = await prisma.document.findMany({
+        const ownedDocumentsRaw = await prisma.document.findMany({
             where: { ownerId: userId },
             include: {
                 owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: {
+                    include: {
+                        user: { select: { id: true, name: true, email: true, image: true } },
+                    },
+                },
+                _count: { select: { comments: true } },
             },
             orderBy: { lastModified: "desc" },
         });
+        // Map to include commentCount and remove internal _count
+        const ownedDocuments = ownedDocumentsRaw.map((doc) => ({
+            ...doc,
+            commentCount: doc._count?.comments ?? 0,
+            _count: undefined,
+        }));
 
-        const sharedShares = await prisma.documentShare.findMany({
+        const sharedSharesRaw = await prisma.documentShare.findMany({
             where: { userId },
             include: {
                 document: {
                     include: {
                         owner: { select: { id: true, name: true, email: true, image: true } },
+                        shares: {
+                            include: {
+                                user: { select: { id: true, name: true, email: true, image: true } },
+                            },
+                        },
+                        _count: { select: { comments: true } },
                     },
                 },
             },
             orderBy: { document: { lastModified: "desc" } },
         });
+        // Map each shared document to include commentCount and remove internal _count
+        const sharedShares = sharedSharesRaw.map((share) => ({
+            ...share,
+            document: {
+                ...share.document,
+                commentCount: share.document._count?.comments ?? 0,
+                _count: undefined,
+            },
+        }));
 
         const sharedDocuments = sharedShares.map((share) => ({
             ...share.document,
@@ -57,8 +85,12 @@ export const createDocument = async (req: Request, res: Response) => {
 
         const newDocument = await prisma.document.create({
             data: {
-                title: title || "Untitled Document",
+                title: title && typeof title === "string" && title.trim().length > 0 ? title.trim() : "Untitled Document",
                 ownerId: userId,
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
 
@@ -69,34 +101,26 @@ export const createDocument = async (req: Request, res: Response) => {
     }
 };
 
-// 3. Get Document By ID (Open Document)
+// 3. Get Document By ID (Open Document - Viewer+)
 export const getDocumentById = async (req: Request, res: Response) => {
     try {
         const id = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id },
-            include: {
-                owner: { select: { id: true, name: true, email: true, image: true } },
-                shares: true,
-            },
-        });
+        const { document, role } = await getDocumentAndRole(id, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s: { userId: string }) => s.userId === userId);
-
-        if (!isOwner && !shareRecord) {
-            return res.status(403).json({ error: "Unauthorized: You do not have access to this document" });
+        if (role === "NONE" || !hasMinimumRole(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: You do not have access to this document" });
         }
 
         return res.status(200).json({
             document,
-            role: isOwner ? "OWNER" : shareRecord?.role,
+            role,
+            commentCount: document._count?.comments ?? 0,
         });
     } catch (error) {
         console.error("Error fetching document:", error);
@@ -104,34 +128,32 @@ export const getDocumentById = async (req: Request, res: Response) => {
     }
 };
 
-// 4. Update / Rename Document
+// 4. Update / Rename Document (Editor+)
 export const updateDocument = async (req: Request, res: Response) => {
     try {
         const id = String(req.params.id);
         const userId = req.user!.id;
         const { title } = req.body;
 
-        const document = await prisma.document.findUnique({
-            where: { id },
-            include: { shares: true },
-        });
+        const { document, role } = await getDocumentAndRole(id, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s: { userId: string }) => s.userId === userId);
-        const isEditor = shareRecord?.role === "EDITOR";
-
-        if (!isOwner && !isEditor) {
+        if (!hasMinimumRole(role, "EDITOR")) {
             return res.status(403).json({ error: "Forbidden: You require editor permissions to modify this document" });
         }
 
         const updatedDocument = await prisma.document.update({
             where: { id },
             data: {
-                title: title !== undefined ? title : document.title,
+                title: title !== undefined && typeof title === "string" ? title.trim() || "Untitled Document" : document.title,
+                lastModified: new Date(),
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
 
@@ -142,21 +164,19 @@ export const updateDocument = async (req: Request, res: Response) => {
     }
 };
 
-// 5. Delete Document
+// 5. Delete Document (Owner Only)
 export const deleteDocument = async (req: Request, res: Response) => {
     try {
         const id = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id },
-        });
+        const { document, role } = await getDocumentAndRole(id, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        if (document.ownerId !== userId) {
+        if (role !== "OWNER") {
             return res.status(403).json({ error: "Forbidden: Only the document owner can delete it" });
         }
 
@@ -171,26 +191,20 @@ export const deleteDocument = async (req: Request, res: Response) => {
     }
 };
 
-// 6. Duplicate Document
+// 6. Duplicate Document (Viewer+)
 export const duplicateDocument = async (req: Request, res: Response) => {
     try {
         const id = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id },
-            include: { shares: true },
-        });
+        const { document, role } = await getDocumentAndRole(id, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s: { userId: string }) => s.userId === userId);
-
-        if (!isOwner && !shareRecord) {
-            return res.status(403).json({ error: "Unauthorized access to document" });
+        if (role === "NONE" || !hasMinimumRole(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: Unauthorized access to document" });
         }
 
         const duplicated = await prisma.document.create({
@@ -198,6 +212,10 @@ export const duplicateDocument = async (req: Request, res: Response) => {
                 title: `${document.title} (Copy)`,
                 content: document.content,
                 ownerId: userId,
+            },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
             },
         });
 

@@ -1,30 +1,29 @@
 import { Request, Response } from "express";
 import { prisma } from "../config/db";
+import { getDocumentAndRole, hasMinimumRole } from "../middleware/permission.middleware";
+import { flushDoc, reloadDocFromDb } from "../websocket/collaboration";
 
-// 1. View Document Revision History
+// 1. View Document Revision History (Viewer+)
 export const getRevisions = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { document, role } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const hasAccess = isOwner || document.shares.some((s) => s.userId === userId);
-
-        if (!hasAccess) {
-            return res.status(403).json({ error: "Unauthorized access to revisions" });
+        if (role === "NONE" || !hasMinimumRole(role, "VIEWER")) {
+            return res.status(403).json({ error: "Forbidden: Unauthorized access to revisions" });
         }
 
         const revisions = await prisma.documentRevision.findMany({
             where: { documentId },
+            include: {
+                creator: { select: { id: true, name: true, email: true, image: true } },
+            },
             orderBy: { createdAt: "desc" },
         });
 
@@ -35,31 +34,31 @@ export const getRevisions = async (req: Request, res: Response) => {
     }
 };
 
-// 2. Create a Document Snapshot / Revision
+// 2. Create a Document Snapshot / Revision (Editor+)
 export const createRevision = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { document, role } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        const isEditor = isOwner || shareRecord?.role === "EDITOR";
-
-        if (!isEditor) {
-            return res.status(403).json({ error: "Forbidden: You require editor permissions to create revisions" });
+        if (!hasMinimumRole(role, "EDITOR")) {
+            return res.status(403).json({ error: "Forbidden: You require editor permissions or higher to create revisions" });
         }
 
-        if (!document.content) {
-            return res.status(400).json({ error: "Document is empty" });
+        // Flush in-memory Yjs doc to database to get the absolute latest state
+        await flushDoc(documentId);
+
+        const currentDoc = await prisma.document.findUnique({
+            where: { id: documentId },
+        });
+
+        if (!currentDoc || !currentDoc.content) {
+            return res.status(400).json({ error: "Document has no content snapshot to save" });
         }
 
         const latestRevision = await prisma.documentRevision.findFirst({
@@ -72,7 +71,7 @@ export const createRevision = async (req: Request, res: Response) => {
         const revision = await prisma.documentRevision.create({
             data: {
                 documentId,
-                content: document.content,
+                content: currentDoc.content,
                 versionNum: nextVersionNum,
                 createdBy: userId,
             },
@@ -88,28 +87,21 @@ export const createRevision = async (req: Request, res: Response) => {
     }
 };
 
-// 3. Restore an Earlier Version
+// 3. Restore an Earlier Version (Editor+)
 export const restoreRevision = async (req: Request, res: Response) => {
     try {
         const documentId = String(req.params.id);
         const revisionId = String(req.params.revisionId);
         const userId = req.user!.id;
 
-        const document = await prisma.document.findUnique({
-            where: { id: documentId },
-            include: { shares: true },
-        });
+        const { document, role } = await getDocumentAndRole(documentId, userId);
 
         if (!document) {
             return res.status(404).json({ error: "Document not found" });
         }
 
-        const isOwner = document.ownerId === userId;
-        const shareRecord = document.shares.find((s) => s.userId === userId);
-        const isEditor = isOwner || shareRecord?.role === "EDITOR";
-
-        if (!isEditor) {
-            return res.status(403).json({ error: "Forbidden: You require editor permissions to restore revisions" });
+        if (!hasMinimumRole(role, "EDITOR")) {
+            return res.status(403).json({ error: "Forbidden: You require editor permissions or higher to restore revisions" });
         }
 
         const revision = await prisma.documentRevision.findUnique({
@@ -117,7 +109,7 @@ export const restoreRevision = async (req: Request, res: Response) => {
         });
 
         if (!revision || revision.documentId !== documentId) {
-            return res.status(404).json({ error: "Revision not found" });
+            return res.status(404).json({ error: "Revision not found on this document" });
         }
 
         // Update document content with the revision's content snapshot
@@ -127,7 +119,14 @@ export const restoreRevision = async (req: Request, res: Response) => {
                 content: revision.content,
                 lastModified: new Date(),
             },
+            include: {
+                owner: { select: { id: true, name: true, email: true, image: true } },
+                shares: true,
+            },
         });
+
+        // Broadcast restored content to any active WebSocket connections
+        await reloadDocFromDb(documentId);
 
         // Get latest version number to increment
         const latestRevision = await prisma.documentRevision.findFirst({
