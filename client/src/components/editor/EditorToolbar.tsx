@@ -1,5 +1,8 @@
 import React from "react";
 import { Editor } from "@tiptap/react";
+import "@tiptap/starter-kit";
+import "@tiptap/extension-underline";
+import "@tiptap/extension-text-align";
 import {
     Bold, Italic, Underline as UnderlineIcon, Strikethrough, Heading1, Heading2,
     List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Eye, MessageSquare
@@ -51,9 +54,8 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor, disabled =
             type="button"
             onClick={onClick}
             title={title}
-            className={`p-2 rounded-lg transition-colors ${
-                isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100"
-            }`}
+            className={`p-2 rounded-lg transition-colors ${isActive ? "bg-indigo-50 text-indigo-700" : "text-slate-600 hover:bg-slate-100"
+                }`}
         >
             {children}
         </button>
