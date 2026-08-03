@@ -8,11 +8,76 @@ servers:
     description: Local development server
 
 paths:
+  # ==================== AUTHENTICATION (Better Auth) ====================
+  /api/auth/sign-in/email:
+    post:
+      summary: Sign in with email and password
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Signed in successfully.
+
+  /api/auth/sign-up/email:
+    post:
+      summary: Sign up with email and password
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Signed up successfully.
+
+  /api/auth/sign-out:
+    post:
+      summary: Sign out the current user
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Signed out successfully.
+
+  /api/auth/session:
+    get:
+      summary: Get the current user session
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Session details retrieved successfully.
+
   # ==================== DOCUMENT MANAGEMENT & DASHBOARD ====================
   /api/documents:
     get:
       summary: Get user documents (Dashboard)
-      description: Returns documents owned by or shared with the authenticated user[cite: 1].
+      description: Returns documents owned by or shared with the authenticated user.
+      tags:
+        - Documents
       parameters:
         - name: filter
           in: query
@@ -22,12 +87,34 @@ paths:
             enum: [owned, shared, recent]
       responses:
         '200':
-          description: List of documents retrieved successfully[cite: 1].
+          description: List of documents retrieved successfully.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    properties:
+                      documents:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
+                  - type: object
+                    properties:
+                      owned:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
+                      shared:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Document'
         '401':
           description: Unauthorized access.
 
     post:
-      summary: Create a new document[cite: 1]
+      summary: Create a new document
+      tags:
+        - Documents
       requestBody:
         required: false
         content:
@@ -37,16 +124,18 @@ paths:
               properties:
                 title:
                   type: string
-                  default: "Untitled Document"[cite: 1]
+                  default: "Untitled Document"
       responses:
         '201':
-          description: Document created successfully[cite: 1].
+          description: Document created successfully.
         '401':
           description: Unauthorized.
 
   /api/documents/{id}:
     get:
-      summary: Open an existing document[cite: 1]
+      summary: Open an existing document
+      tags:
+        - Documents
       parameters:
         - name: id
           in: path
@@ -55,14 +144,16 @@ paths:
             type: string
       responses:
         '200':
-          description: Document metadata and content retrieved[cite: 1].
+          description: Document metadata and content retrieved.
         '403':
-          description: Forbidden (insufficient permissions)[cite: 1].
+          description: Forbidden (insufficient permissions).
         '404':
           description: Document not found.
 
     patch:
-      summary: Rename or update document[cite: 1]
+      summary: Rename or update document
+      tags:
+        - Documents
       parameters:
         - name: id
           in: path
@@ -77,15 +168,19 @@ paths:
               type: object
               properties:
                 title:
-                  type: string[cite: 1]
+                  type: string
       responses:
         '200':
-          description: Document updated successfully[cite: 1].
+          description: Document updated successfully.
         '403':
-          description: Forbidden (requires Editor role)[cite: 1].
+          description: Forbidden (requires Editor role).
+        '404':
+          description: Document not found.
 
     delete:
-      summary: Delete a document[cite: 1]
+      summary: Delete a document
+      tags:
+        - Documents
       parameters:
         - name: id
           in: path
@@ -94,13 +189,17 @@ paths:
             type: string
       responses:
         '204':
-          description: Document deleted successfully[cite: 1].
+          description: Document deleted successfully.
         '403':
           description: Forbidden (only owner can delete).
+        '404':
+          description: Document not found.
 
   /api/documents/{id}/duplicate:
     post:
-      summary: Duplicate an existing document[cite: 1]
+      summary: Duplicate an existing document
+      tags:
+        - Documents
       parameters:
         - name: id
           in: path
@@ -109,12 +208,18 @@ paths:
             type: string
       responses:
         '201':
-          description: Document duplicated successfully[cite: 1].
+          description: Document duplicated successfully.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Document not found.
 
   # ==================== SHARING & PERMISSIONS ====================
   /api/documents/{id}/shares:
     get:
-      summary: Get document shares and permissions[cite: 1]
+      summary: Get document shares and permissions
+      tags:
+        - Shares
       parameters:
         - name: id
           in: path
@@ -123,9 +228,16 @@ paths:
             type: string
       responses:
         '200':
-          description: List of shared users and roles[cite: 1].
+          description: List of shared users and roles.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Document not found.
+
     post:
-      summary: Share document with a user[cite: 1]
+      summary: Share document with a user
+      tags:
+        - Shares
       parameters:
         - name: id
           in: path
@@ -138,21 +250,92 @@ paths:
           application/json:
             schema:
               type: object
-              required: [email, role]
+              required: [email]
               properties:
                 email:
                   type: string
                 role:
                   type: string
-                  enum: [VIEWER, COMMENTER, EDITOR][cite: 1]
+                  enum: [VIEWER, COMMENTER, EDITOR]
+                permission:
+                  type: string
+                  enum: [VIEWER, COMMENTER, EDITOR]
       responses:
         '201':
-          description: Document shared successfully[cite: 1].
+          description: Document shared successfully.
+        '400':
+          description: Bad Request (Invalid email or cannot share with owner).
+        '403':
+          description: Forbidden (Only owner can share).
+        '404':
+          description: Document or user not found.
+
+  /api/documents/{id}/shares/{shareId}:
+    patch:
+      summary: Update user permission role
+      tags:
+        - Shares
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                  enum: [VIEWER, COMMENTER, EDITOR]
+                permission:
+                  type: string
+                  enum: [VIEWER, COMMENTER, EDITOR]
+      responses:
+        '200':
+          description: Role updated successfully.
+        '403':
+          description: Forbidden (Only owner can manage permissions).
+        '404':
+          description: Document or share record not found.
+
+    delete:
+      summary: Revoke document share
+      tags:
+        - Shares
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: shareId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Access revoked successfully.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Document or share record not found.
 
   # ==================== COMMENTS ====================
   /api/documents/{id}/comments:
     get:
-      summary: Get all comments for a document[cite: 1]
+      summary: Get all comments for a document
+      tags:
+        - Comments
       parameters:
         - name: id
           in: path
@@ -161,9 +344,16 @@ paths:
             type: string
       responses:
         '200':
-          description: Comments and threads retrieved[cite: 1].
+          description: Comments and threads retrieved.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Document not found.
+
     post:
-      summary: Add a comment or reply[cite: 1]
+      summary: Add a comment or reply
+      tags:
+        - Comments
       parameters:
         - name: id
           in: path
@@ -179,17 +369,25 @@ paths:
               required: [content]
               properties:
                 content:
-                  type: string[cite: 1]
+                  type: string
                 parentId:
                   type: string
                   nullable: true
       responses:
         '201':
-          description: Comment created[cite: 1].
+          description: Comment created.
+        '400':
+          description: Invalid comment content or parent.
+        '403':
+          description: Forbidden (Requires Commenter role).
+        '404':
+          description: Document not found.
 
   /api/documents/{id}/comments/{commentId}:
     patch:
-      summary: Resolve or update a comment[cite: 1]
+      summary: Resolve or update a comment
+      tags:
+        - Comments
       parameters:
         - name: id
           in: path
@@ -209,12 +407,21 @@ paths:
               type: object
               properties:
                 isResolved:
-                  type: boolean[cite: 1]
+                  type: boolean
+                content:
+                  type: string
       responses:
         '200':
-          description: Comment updated[cite: 1].
+          description: Comment updated.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Comment or document not found.
+          
     delete:
-      summary: Delete a comment[cite: 1]
+      summary: Delete a comment
+      tags:
+        - Comments
       parameters:
         - name: id
           in: path
@@ -228,12 +435,18 @@ paths:
             type: string
       responses:
         '204':
-          description: Comment deleted[cite: 1].
+          description: Comment deleted.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Comment or document not found.
 
   # ==================== VERSION HISTORY ====================
   /api/documents/{id}/revisions:
     get:
-      summary: View document revision history[cite: 1]
+      summary: View document revision history
+      tags:
+        - Revisions
       parameters:
         - name: id
           in: path
@@ -242,11 +455,37 @@ paths:
             type: string
       responses:
         '200':
-          description: List of revisions with timestamps and creators[cite: 1].
+          description: List of revisions with timestamps and creators.
+        '403':
+          description: Forbidden.
+        '404':
+          description: Document not found.
+          
+    post:
+      summary: Create a Document Snapshot / Revision
+      tags:
+        - Revisions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Revision created successfully.
+        '400':
+          description: Document has no content snapshot to save.
+        '403':
+          description: Forbidden (Requires Editor permissions).
+        '404':
+          description: Document not found.
 
   /api/documents/{id}/revisions/{revisionId}/restore:
     post:
-      summary: Restore an earlier version of the document[cite: 1]
+      summary: Restore an earlier version of the document
+      tags:
+        - Revisions
       parameters:
         - name: id
           in: path
@@ -260,4 +499,72 @@ paths:
             type: string
       responses:
         '200':
-          description: Document restored to revision state[cite: 1].
+          description: Document restored to revision state.
+        '403':
+          description: Forbidden (Requires Editor permissions).
+        '404':
+          description: Document or revision not found.
+
+  # ==================== NOTIFICATIONS ====================
+  /api/notifications:
+    get:
+      summary: Get all notifications for the authenticated user
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: List of notifications retrieved successfully.
+        '401':
+          description: Unauthorized.
+          
+  /api/notifications/read-all:
+    put:
+      summary: Mark all notifications as read
+      tags:
+        - Notifications
+      responses:
+        '200':
+          description: All notifications marked as read.
+        '401':
+          description: Unauthorized.
+
+  /api/notifications/{id}/read:
+    put:
+      summary: Mark a single notification as read
+      tags:
+        - Notifications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read.
+        '401':
+          description: Unauthorized.
+        '404':
+          description: Notification not found.
+
+components:
+  schemas:
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        ownerId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastModified:
+          type: string
+          format: date-time
+        commentCount:
+          type: integer

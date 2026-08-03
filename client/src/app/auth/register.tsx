@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { signUp } from "../../lib/auth-client";
+import { signUp, signIn } from "../../lib/auth-client";
 import { FileText } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input } from "../../components/ui/Input";
