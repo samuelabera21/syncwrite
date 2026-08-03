@@ -22,7 +22,7 @@ export const getDocuments = async (req: Request, res: Response) => {
             orderBy: { lastModified: "desc" },
         });
         // Map to include commentCount and remove internal _count
-        const ownedDocuments = ownedDocumentsRaw.map((doc) => ({
+        const ownedDocuments = ownedDocumentsRaw.map((doc: any) => ({
             ...doc,
             commentCount: doc._count?.comments ?? 0,
             _count: undefined,
@@ -46,7 +46,7 @@ export const getDocuments = async (req: Request, res: Response) => {
             orderBy: { document: { lastModified: "desc" } },
         });
         // Map each shared document to include commentCount and remove internal _count
-        const sharedShares = sharedSharesRaw.map((share) => ({
+        const sharedShares = sharedSharesRaw.map((share: any) => ({
             ...share,
             document: {
                 ...share.document,
@@ -55,7 +55,7 @@ export const getDocuments = async (req: Request, res: Response) => {
             },
         }));
 
-        const sharedDocuments = sharedShares.map((share) => ({
+        const sharedDocuments = sharedShares.map((share: any) => ({
             ...share.document,
             myRole: share.role,
         }));

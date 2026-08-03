@@ -14,7 +14,7 @@ const app = express();
 const server = http.createServer(app);
 
 console.log("DEBUG ENV: GOOGLE_CLIENT_ID=", process.env.GOOGLE_CLIENT_ID);
-console.log("DEBUG ENV: GOOGLE_CLIENT_SECRET=", process.env.GOOGLE_CLIENT_SECRET);
+
 
 
 // Setup WebSocket Server attached to HTTP server

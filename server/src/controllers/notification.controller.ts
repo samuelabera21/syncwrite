@@ -30,7 +30,7 @@ export const markAsRead = async (req: Request, res: Response) => {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-        const notificationId = req.params.id;
+        const notificationId = String(req.params.id);
         
         const notification = await prisma.notification.findUnique({
             where: { id: notificationId },

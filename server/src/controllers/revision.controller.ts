@@ -114,7 +114,9 @@ export const restoreRevision = async (req: Request, res: Response) => {
 
         // 1. Generate new CRDT operations (deletions and insertions) that revert the 
         // current document state back to the snapshot's text. This ensures clients accept the change.
-        const restoredStateBytes = await restoreDocState(documentId, revision.content);
+const restoredStateBytes = Buffer.from(
+    await restoreDocState(documentId, Buffer.from(revision.content))
+);
 
         // 2. Update document content with the newly appended CRDT state
         const updatedDocument = await prisma.document.update({

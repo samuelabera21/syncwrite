@@ -3,7 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "@better-auth/prisma-adapter";
 import { prisma } from "./db";
 
-console.log("IN AUTH.TS SECRET:", process.env.GOOGLE_CLIENT_SECRET);
+
 
 
 export const auth = betterAuth({

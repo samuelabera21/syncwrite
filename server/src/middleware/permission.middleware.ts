@@ -43,7 +43,7 @@ export async function getDocumentAndRole(documentId: string, userId: string) {
         return { document, role: "OWNER" as EffectiveRole, share: null };
     }
 
-    const share = document.shares.find((s) => s.userId === userId) || null;
+    const share = document.shares.find((s: any) => s.userId === userId) || null;
     if (share) {
         return { document, role: share.role as EffectiveRole, share };
     }

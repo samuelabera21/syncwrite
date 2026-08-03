@@ -1,0 +1,10 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.git
+.DS_Store
+npm-debug.log*
+prisma.config.js  
+prisma.config.js.map 
