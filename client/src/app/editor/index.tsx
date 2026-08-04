@@ -1044,6 +1044,7 @@ export default function Editor() {
     const { id } = useParams<{ id: string }>();
     const { data: session, isPending: isSessionPending } = useSession();
     const [yjsState, setYjsState] = useState<{ ydoc: Y.Doc; provider: WebsocketProvider } | null>(null);
+    const [isSynced, setIsSynced] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -1053,14 +1054,21 @@ export default function Editor() {
 
         setYjsState({ ydoc, provider });
 
+        provider.on("synced", (synced: boolean) => {
+            if (synced) {
+                setIsSynced(true);
+            }
+        });
+
         return () => {
             provider.destroy();
             ydoc.destroy();
             setYjsState(null);
+            setIsSynced(false);
         };
     }, [id]);
 
-    if (isSessionPending || !yjsState || !id) {
+    if (isSessionPending || !yjsState || !isSynced || !id) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center space-y-3">
