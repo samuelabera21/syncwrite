@@ -1054,7 +1054,7 @@ export default function Editor() {
 
         setYjsState({ ydoc, provider });
 
-        provider.on("synced", (synced: boolean) => {
+        provider.on("sync", (synced: boolean) => {
             if (synced) {
                 setIsSynced(true);
             }
