@@ -5,6 +5,7 @@ import { FileText, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
+import { ThemeToggle } from "../../components/shared/ThemeToggle";
 
 export default function Register() {
     const [name, setName] = useState("");
@@ -54,6 +55,9 @@ export default function Register() {
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Home
                 </Link>
+                <div className="absolute top-8 right-8">
+                    <ThemeToggle />
+                </div>
                 <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 text-center dark:backdrop-blur-md transition-colors">
                     <div className="flex flex-col items-center mb-6">
                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 mb-4 shadow-sm dark:border dark:border-emerald-500/20">
@@ -85,6 +89,9 @@ export default function Register() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Home
             </Link>
+            <div className="absolute top-8 right-8">
+                <ThemeToggle />
+            </div>
             <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 dark:backdrop-blur-md transition-colors">
                 <div className="flex flex-col items-center mb-8">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-600/20 text-white dark:text-indigo-400 mb-4 shadow-sm dark:border dark:border-indigo-500/20">

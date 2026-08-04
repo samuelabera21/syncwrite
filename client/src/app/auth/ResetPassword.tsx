@@ -3,6 +3,7 @@ import { authClient } from "../../lib/auth-client";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Lock, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
+import { ThemeToggle } from "../../components/shared/ThemeToggle";
 
 export default function ResetPassword() {
     const [searchParams] = useSearchParams();
@@ -52,26 +53,29 @@ export default function ResetPassword() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-950 p-4">
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 transition-colors selection:bg-indigo-500/30">
+            <div className="absolute top-8 right-8">
+                <ThemeToggle />
+            </div>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-800 p-8 shadow-2xl"
+                className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-200/60 dark:border-slate-800 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] dark:backdrop-blur-md transition-colors"
             >
                 {!isSuccess ? (
                     <>
                         <div className="mb-8 text-center">
-                            <h1 className="text-2xl font-bold text-slate-100 tracking-tight">Reset Password</h1>
-                            <p className="text-slate-400 mt-2 text-sm">Create a new secure password for your account.</p>
+                            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50 tracking-tight transition-colors">Reset Password</h1>
+                            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm transition-colors">Create a new secure password for your account.</p>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
-                                <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-1.5">
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 transition-colors">
                                     New Password
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 transition-colors">
                                         <Lock className="h-5 w-5" />
                                     </div>
                                     <input
@@ -80,18 +84,18 @@ export default function ResetPassword() {
                                         required
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="w-full rounded-xl bg-slate-950 border border-slate-800 py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                                        className="w-full rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 py-3 pl-10 pr-4 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                                         placeholder="••••••••"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-300 mb-1.5">
+                                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 transition-colors">
                                     Confirm New Password
                                 </label>
                                 <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 transition-colors">
                                         <Lock className="h-5 w-5" />
                                     </div>
                                     <input
@@ -100,22 +104,22 @@ export default function ResetPassword() {
                                         required
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full rounded-xl bg-slate-950 border border-slate-800 py-3 pl-10 pr-4 text-slate-200 placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
+                                        className="w-full rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 py-3 pl-10 pr-4 text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
                                         placeholder="••••••••"
                                     />
                                 </div>
                             </div>
 
                             {error && (
-                                <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-4">
-                                    <p className="text-sm text-rose-400 font-medium">{error}</p>
+                                <div className="rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 p-4 transition-colors">
+                                    <p className="text-sm text-rose-600 dark:text-rose-400 font-medium transition-colors">{error}</p>
                                 </div>
                             )}
 
                             <button
                                 type="submit"
                                 disabled={isLoading || !token}
-                                className="w-full flex items-center justify-center rounded-xl bg-indigo-600 py-3 px-4 font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full flex items-center justify-center rounded-xl bg-indigo-600 py-3 px-4 font-semibold text-white hover:bg-indigo-700 dark:hover:bg-indigo-500 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Reset Password"}
                             </button>
@@ -126,8 +130,8 @@ export default function ResetPassword() {
                         <div className="flex justify-center mb-6">
                             <CheckCircle2 className="h-16 w-16 text-emerald-500" />
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-100 mb-2">Password Reset!</h2>
-                        <p className="text-slate-400 text-sm mb-8">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 transition-colors">Password Reset!</h2>
+                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 transition-colors">
                             Your password has been changed successfully. You are being redirected to login...
                         </p>
                     </div>
