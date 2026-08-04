@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signIn, authClient } from "../../lib/auth-client";
-import { FileText } from "lucide-react";
+import { FileText, ArrowLeft } from "lucide-react";
 import { Input } from "../../components/ui/Input";
 import { Button } from "../../components/ui/Button";
 
@@ -55,6 +55,10 @@ export default function Login() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 px-4 font-sans selection:bg-indigo-500/30 transition-colors">
+            <Link to="/" className="absolute top-8 left-8 flex items-center text-sm font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Home
+            </Link>
             <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900/50 p-8 shadow-sm dark:shadow-[0_0_40px_rgba(79,70,229,0.1)] border border-slate-200/60 dark:border-slate-800 dark:backdrop-blur-md transition-colors">
                 <div className="flex flex-col items-center mb-8">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 dark:bg-indigo-600/20 text-white dark:text-indigo-400 mb-4 shadow-sm dark:border dark:border-indigo-500/20">
