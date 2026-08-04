@@ -352,6 +352,7 @@ function CollaborativeEditor({ id, ydoc, provider, session }: CollaborativeEdito
             await api.post(`/documents/${id}/revisions/${revId}/restore`);
             fetchRevisions();
             toast.success("Document restored from revision");
+            window.location.reload();
         } catch (err: any) {
             toast.error(err.response?.data?.error || "Failed to restore revision");
         }

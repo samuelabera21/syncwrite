@@ -164,49 +164,26 @@ export const flushDoc = async (documentId: string): Promise<void> => {
  * as it generates new deletion and insertion operations rather than rewinding time.
  */
 export const restoreDocState = async (documentId: string, revisionContent: Buffer): Promise<Buffer> => {
-    let doc = docs.get(documentId);
-    let isDocActive = true;
+    const doc = docs.get(documentId);
     
-    if (!doc) {
-        doc = await getOrLoadDoc(documentId);
-        isDocActive = false;
-    }
-
-    try {
-        const tempDoc = new Y.Doc();
-        Y.applyUpdate(tempDoc, new Uint8Array(revisionContent));
-
-        const currentFragment = doc.getXmlFragment("default");
-        const snapshotFragment = tempDoc.getXmlFragment("default");
-
-        doc.transact(() => {
-            if (currentFragment.length > 0) {
-                currentFragment.delete(0, currentFragment.length);
+    if (doc) {
+        // Disconnect all clients to force them to reload the document state from scratch
+        const clients = Array.from(doc.conns.keys());
+        for (const ws of clients) {
+            try {
+                ws.close(1012, "Document restoring..."); // 1012 means Service Restart
+            } catch (e) {
+                // Ignore close errors
             }
-            
-            const elementsToInsert = snapshotFragment.toArray().map(el => {
-                if (el && typeof (el as any).clone === 'function') {
-                    return (el as any).clone();
-                }
-                return el;
-            });
-            
-            if (elementsToInsert.length > 0) {
-                currentFragment.insert(0, elementsToInsert);
-            }
-        }, "restore");
-
-        const newState = Buffer.from(Y.encodeStateAsUpdate(doc));
-
-        if (!isDocActive) {
-            docs.delete(documentId);
         }
-
-        return newState;
-    } catch (err) {
-        console.error(`Failed to restore document ${documentId} state:`, err);
-        throw err;
+        
+        // Remove the document from memory so it gets freshly loaded from DB next time
+        docs.delete(documentId);
     }
+    
+    // Return the revision bytes directly so the controller saves them to DB.
+    // The next time a client connects, getOrLoadDoc will load these exact bytes!
+    return revisionContent;
 };
 
 /**
