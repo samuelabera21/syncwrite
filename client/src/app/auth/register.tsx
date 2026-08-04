@@ -70,9 +70,6 @@ export default function Register() {
                         We've sent a verification link to <span className="font-semibold text-slate-800 dark:text-slate-100 transition-colors">{successEmail}</span>. 
                         Please check your inbox and click the link to verify your account.
                     </p>
-                    <p className="text-sm text-slate-500 transition-colors">
-                        (Dev Note: Check your terminal for the mock email link)
-                    </p>
                     <Button
                         onClick={() => navigate("/login")}
                         className="w-full"

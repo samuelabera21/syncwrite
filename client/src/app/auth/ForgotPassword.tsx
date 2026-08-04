@@ -92,8 +92,6 @@ export default function ForgotPassword() {
                         <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2 transition-colors">Check your inbox</h2>
                         <p className="text-slate-500 dark:text-slate-400 text-sm mb-8 transition-colors">
                             We have sent a password reset link to <span className="font-semibold text-slate-700 dark:text-slate-300 transition-colors">{email}</span>.
-                            <br/><br/>
-                            <span className="text-xs text-indigo-600 dark:text-indigo-400 transition-colors">(Dev Note: Check the backend server console if testing without email credentials)</span>
                         </p>
                     </div>
                 )}
