@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useState } from "react";
 import { authClient } from "../../lib/auth-client";
 import { Link } from "react-router-dom";
@@ -18,7 +19,7 @@ export default function ForgotPassword() {
         
         const { error } = await authClient.requestPasswordReset({
             email,
-            redirectTo: "http://localhost:5173/reset-password",
+            redirectTo: `${import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"}/reset-password`,
         });
 
         setIsLoading(false);

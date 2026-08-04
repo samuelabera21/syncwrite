@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useEditor, EditorContent } from "@tiptap/react";
@@ -1047,7 +1048,7 @@ export default function Editor() {
         if (!id) return;
 
         const ydoc = new Y.Doc();
-        const provider = new WebsocketProvider("ws://localhost:5000", id, ydoc);
+        const provider = new WebsocketProvider(import.meta.env.VITE_WS_URL || "ws://localhost:5000", id, ydoc);
 
         setYjsState({ ydoc, provider });
 

@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signIn, authClient } from "../../lib/auth-client";
@@ -44,7 +45,7 @@ export default function Login() {
         try {
             await authClient.sendVerificationEmail({
                 email,
-                callbackURL: "http://localhost:5173/login"
+                callbackURL: `${import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"}/login`
             });
             setResendSuccess(true);
         } catch (e) {
@@ -144,7 +145,7 @@ export default function Login() {
                                 try {
                                     await signIn.social({
                                         provider: "google",
-                                        callbackURL: "http://localhost:5173/",
+                                        callbackURL: `${import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"}/`,
                                     });
                                 } catch (err) {
                                     setError("Failed to sign in with Google");

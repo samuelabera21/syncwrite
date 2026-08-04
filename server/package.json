@@ -5,7 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc"
+    "build": "tsc",
+    "start": "node dist/src/index.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
