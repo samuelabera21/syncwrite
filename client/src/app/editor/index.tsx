@@ -1053,11 +1053,10 @@ export default function Editor() {
         const provider = new WebsocketProvider(import.meta.env.VITE_WS_URL || "ws://localhost:5000", id, ydoc);
 
         setYjsState({ ydoc, provider });
+        setIsSynced(provider.synced);
 
         provider.on("sync", (synced: boolean) => {
-            if (synced) {
-                setIsSynced(true);
-            }
+            setIsSynced(synced);
         });
 
         return () => {
