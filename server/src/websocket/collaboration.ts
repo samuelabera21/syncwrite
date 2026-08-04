@@ -348,16 +348,32 @@ export const setupWebSocketServer = (wss: WebSocketServer) => {
                 return;
             }
 
-            // Ensure document is loaded from PostgreSQL BEFORE sending any sync messages
+            // We must buffer incoming messages if the document is still loading
+            // otherwise we will drop the client's initial syncStep1!
+            const messageBuffer: ArrayBuffer[] = [];
+            let docLoaded = false;
+            let loadedDoc: WSSharedDoc | null = null;
+
+            ws.on("message", (message: ArrayBuffer) => {
+                if (!docLoaded || !loadedDoc) {
+                    messageBuffer.push(message);
+                } else {
+                    messageListener(ws, loadedDoc, new Uint8Array(message), role);
+                }
+            });
+
+            // Ensure document is loaded from PostgreSQL
             const doc = await getOrLoadDoc(documentId);
+            loadedDoc = doc;
+            docLoaded = true;
 
             // Register connection
             doc.conns.set(ws, new Set());
 
-            // Message handler with role enforcement
-            ws.on("message", (message: ArrayBuffer) => {
-                messageListener(ws, doc, new Uint8Array(message), role);
-            });
+            // Process any buffered messages
+            for (const msg of messageBuffer) {
+                messageListener(ws, doc, new Uint8Array(msg), role);
+            }
 
             // Ping/pong heartbeat
             let pongReceived = true;
