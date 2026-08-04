@@ -1067,7 +1067,7 @@ export default function Editor() {
         };
     }, [id]);
 
-    if (isSessionPending || !yjsState || !isSynced || !id) {
+    if (isSessionPending || !yjsState || !id) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-slate-50">
                 <div className="flex flex-col items-center space-y-3">
