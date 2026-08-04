@@ -36,10 +36,12 @@ export const sendEmail = async ({
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS,
             },
+            // Force IPv4 to avoid ENETUNREACH errors on environments without IPv6 routing
+            family: 4, 
             connectionTimeout: 10000, // 10 seconds timeout
             greetingTimeout: 10000,
             socketTimeout: 15000,
-        });
+        } as any);
 
         const info = await transporter.sendMail({
             from: process.env.EMAIL_FROM || '"SyncWrite" <noreply@syncwrite.com>',
