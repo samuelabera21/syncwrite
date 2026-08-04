@@ -11,7 +11,7 @@ export const sendEmail = async ({
     text: string;
     html?: string;
 }) => {
-    const isMock = !process.env.SMTP_HOST;
+    const isMock = !process.env.BREVO_API_KEY;
 
     if (isMock) {
         // Credential-free mode: Log to console beautifully
@@ -27,33 +27,36 @@ export const sendEmail = async ({
     }
 
     try {
-        console.log(`Attempting to send real email to ${to} via SMTP...`);
-        const transporter = nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT || "587"),
-            secure: process.env.SMTP_PORT === "465", // true for 465, false for other ports
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-            },
-            // Force IPv4 to avoid ENETUNREACH errors on environments without IPv6 routing
-            family: 4, 
-            connectionTimeout: 10000, // 10 seconds timeout
-            greetingTimeout: 10000,
-            socketTimeout: 15000,
-        } as any);
+        console.log(`Attempting to send real email to ${to} via Brevo HTTP API...`);
 
-        const info = await transporter.sendMail({
-            from: process.env.EMAIL_FROM || '"SyncWrite" <noreply@syncwrite.com>',
-            to,
-            subject,
-            text,
-            html,
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "api-key": process.env.BREVO_API_KEY as string,
+                "content-type": "application/json"
+            },
+            body: JSON.stringify({
+                sender: {
+                    name: "SyncWrite",
+                    email: process.env.EMAIL_FROM || "noreply@syncwrite.com"
+                },
+                to: [{ email: to }],
+                subject: subject,
+                textContent: text,
+                htmlContent: html || text
+            })
         });
 
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Brevo API Error: ${response.status} ${JSON.stringify(errorData)}`);
+        }
+
+        const info = await response.json();
         console.log(`✅ Real email sent to ${to}. Message ID: ${info.messageId}`);
     } catch (error: any) {
-        console.error("❌ Failed to send real email via SMTP:", error?.message || error);
+        console.error("❌ Failed to send real email via HTTP API:", error?.message || error);
         throw error;
     }
 };
